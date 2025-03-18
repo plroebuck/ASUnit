@@ -1,0 +1,83 @@
+###
+### ASUnit Workflow
+###
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  runs-on: macos-latest
+
+  env:
+    ASUNIT_LIB_DIR: "~/Library/Script\ Libraries/com.lifepillar"
+    ASUNIT_TEXT: "ASUnit.applescript"
+    ASUNIT_BNDL: "ASUnit.scptd"
+    
+  test:
+    steps:
+      - name: Runs a test
+        run: echo "Hello, world!"
+
+  gestalt:
+    steps:
+      - name: Display system information
+        run: |
+          echo "### System Info ###"
+          sw_vers
+          echo "Architecture: $( uname -p )"
+          echo "OS: $( uname -sr )"
+          echo "CWD: $( pwd )"
+          echo "Environment:"; echo
+          env | sort
+          
+  setup:
+    steps:
+      - name: Create ASUnit library directory
+        run: |
+          echo "Create ASUnit library directory"
+          echo "CWD: $( pwd )"
+          mkdir -p ${{env.ASUNIT_LIB_DIR}}
+
+  build:
+    needs: [gestalt, setup]
+    steps:
+      - name: Build ASUnit library
+      - uses: actions/checkout@v4
+        working-directory: ./ASUnit
+        run: |
+          echo "Compiling ASUnit"
+          echo "CWD: $( pwd )"
+          echo "CWD: $( pwd )"
+
+          osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}}
+
+  install:
+    needs: build
+    steps:
+      - name: Install ASUnit library
+        working-directory: ./ASUnit
+        run: |
+          echo "Installing ASUnit"
+          echo "CWD: $( pwd )"
+          mv ${{env.ASUNIT_BNDL}} "${{env.ASUNIT_LIB_DIR}}"
+
+  test:
+    needs: install
+    steps:
+      - name: Test ASUnit framework with test program
+        working-directory: ./ASUnit/test
+        run: |
+          echo "Testing ASUnit framework with test program"
+          echo "CWD: $( pwd )"
+          osascript "Test\ ASUnit.applescript"
