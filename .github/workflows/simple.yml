@@ -46,15 +46,15 @@ jobs:
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
-  checkout:
-    runs_on: macos-latest
-    if: false
-    steps:
-      - name: Checkout repository
-      - uses: actions/checkout@v4
+#  checkout:
+#    runs_on: macos-latest
+#    if: false
+#    steps:
+#      - name: Checkout repository
+#      - uses: actions/checkout@v4
 
   cwd:
-    runs_on: macos-latest
+    runs-on: macos-latest
     steps:
       - name: Display current directory and its contents
         run: |
