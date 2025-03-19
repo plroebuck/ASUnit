@@ -25,3 +25,17 @@ jobs:
     steps:
       - name: Say hello
         run: echo "Hello, world!"
+
+  gestalt:
+    runs-on: macos-latest
+    steps:
+      - name: Display system information
+        run: |
+          echo "::group::System Info"
+          sw_vers
+          echo "Architecture: $( uname -p )"
+          echo "OS: $( uname -sr )"
+          echo "CWD: $( pwd )"
+          echo "Environment:"
+          env | sort | sed 's/^/  /'
+          echo "::endgroup::"
