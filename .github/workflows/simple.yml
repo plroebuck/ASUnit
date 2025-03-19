@@ -41,16 +41,16 @@ jobs:
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
-#      - name: Checkout
-#      - uses: actions/checkout@v4
+      - name: Checkout
+      - uses: actions/checkout@v4
 
-      - name: Display current directory and its contents
-      - run: |
-          echo "::group::CWD (HOME)"
-          pwd
-          ls -al | sed 's/^/  /'
-          cd $GITHUB_WORKSPACE
-          echo "::group::CWD (GHWS)"
-          pwd
-          ls -al | sed 's/^/  /'
-          echo "::endgroup::"
+#      - name: Display current directory and its contents
+#      - run: |
+#          echo "::group::CWD (HOME)"
+#          pwd
+#          ls -al | sed 's/^/  /'
+#          cd $GITHUB_WORKSPACE
+#          echo "::group::CWD (GHWS)"
+#          pwd
+#          ls -al | sed 's/^/  /'
+#          echo "::endgroup::"
