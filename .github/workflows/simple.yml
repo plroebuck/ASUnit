@@ -35,8 +35,12 @@ jobs:
           sw_vers
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
+      - name: Display environment
+        run: |
           echo "Environment:"
           env | sort | sed 's/^/  /'
+      - name: Display current directory and its contents
+        run: |
           echo; echo "CWD: $( pwd )"
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
