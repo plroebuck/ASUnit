@@ -27,7 +27,7 @@ env:
 defaults:
   run:
     shell: bash
-    working-directory: ./ASUnit
+#    working-directory: ./ASUnit
 
 ## Workflow [jobs can be run sequentially or in parallel]
 jobs:
@@ -36,14 +36,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Runs a test
-        working-directory: "~"
         run: echo "Hello, world!"
 
   gestalt:
     runs-on: macos-latest
+    if: false
     steps:
       - name: Display system information
-        working-directory: "~"
         run: |
           echo "::group::System Info"
           sw_vers
@@ -56,6 +55,7 @@ jobs:
           
   setup:
     runs-on: macos-latest
+    if: false
     steps:
       - name: Create ASUnit library directory
         working-directory: "~"
