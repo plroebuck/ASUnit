@@ -35,7 +35,8 @@ jobs:
           sw_vers
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
-          echo "CWD: $( pwd )"
           echo "Environment:"
           env | sort | sed 's/^/  /'
+          echo; echo "CWD: $( pwd )"
+          ls -al | sed 's/^/  /'
           echo "::endgroup::"
