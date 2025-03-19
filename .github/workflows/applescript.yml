@@ -15,24 +15,26 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  API_DOC_DIR: "./doc/api"
+  ASUNIT_BNDL: "ASUnit.scptd"
+  ASUNIT_LIB_DIR: "~/Library/Script\ Libraries/com.lifepillar"
+  ASUNIT_TEXT: "ASUnit.applescript"
+  DOC_DIR: "./doc"
+  UNIT_TEST: "Test\ ASUnit.applescript"
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  runs-on: macos-latest
 
-  env:
-    ASUNIT_LIB_DIR: "~/Library/Script\ Libraries/com.lifepillar"
-    ASUNIT_TEXT: "ASUnit.applescript"
-    ASUNIT_BNDL: "ASUnit.scptd"
-    UNIT_TEST: "Test\ ASUnit.applescript"
-    DOC_DIR: "./doc"
-    API_DOC_DIR: "./doc/api"
     
   simple_test:
+    runs-on: macos-latest
     steps:
       - name: Runs a test
         run: echo "Hello, world!"
 
   gestalt:
+    runs-on: macos-latest
     steps:
       - name: Display system information
         run: |
@@ -46,6 +48,7 @@ jobs:
           echo "::endgroup::"
           
   setup:
+    runs-on: macos-latest
     steps:
       - name: Create ASUnit library directory
         run: |
@@ -56,9 +59,11 @@ jobs:
 
   build:
     needs: [gestalt, setup]
+    runs-on: macos-latest
     steps:
       - name: Build ASUnit library
         uses: actions/checkout@v4
+      - name: Build ASUnit library
         working-directory: ./ASUnit
         run: |
           echo "::group::Compiling ASUnit"
@@ -71,6 +76,7 @@ jobs:
 
   install:
     needs: build
+    runs-on: macos-latest
     steps:
       - name: Install ASUnit library
         working-directory: ./ASUnit
@@ -82,6 +88,7 @@ jobs:
 
   test:
     needs: install
+    runs-on: macos-latest
     steps:
       - name: Test ASUnit framework with test program
         working-directory: ./ASUnit/test
@@ -96,39 +103,60 @@ jobs:
 
   document:
     needs: test
+    runs-on: macos-latest
     env:
       README_MD: "README.md"
       README_HTML: "README.html"
       OLD_README_MD: "OldManual.md"
       OLD_README_HTML: "OldManual.html"
-
     steps:
       - name: Convert markdown files to HTML
-        uses: pandoc/actions/setup
         working-directory: ./ASUnit
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
           mkdir -p "${{env.DOC_DIR}}"
-          pandoc --standalone -o "${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
-          pandoc --standalone -o "${{env.README_HTML}}" "${{env.README_MD}}"
+      - uses: docker://pandoc/core:3.5
+          with:
+            args: >- # allows you to break string into multiple lines
+              --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
+      - uses: docker://pandoc/core:3.5
+          with:
+            args: >- # allows you to break string into multiple lines
+              --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+        run: |
+          if [[ -s "${{env.README_HTML}}" ]]; then
+            echo "::error file=${{env.README_HTML}}, title=FUBAR::zero length file"
+          fi
+          if [[ -s "${{env.OLD_README_HTML}}" ]]; then
+            echo "::error file=${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
+          fi
           echo "::endgroup::"
-      
+
   document_api:
     needs: test
+    runs-on: macos-latest
     steps:
+      - name: Setup for creating documentation
+        working-directory: ./ASUnit
+        run: |
+          if [[ -d "${{env.API_DOC_DIR}}" ]]; then
+            rm -rf "${{env.API_DOC_DIR}}/*"
+          else
+            mkdir -p "${{env.API_DOC_DIR}}"
+          fi
       - name: Create API documentation
         working-directory: ./ASUnit
         run: |
           echo "::group::Creating API documentation"
-          rm -rf "${{env.API_DOC_DIR}}"
-          mkdir -p "${{env.API_DOC_DIR}}"
           env LANG=en_US.UTF-8 headerdoc2html -q -o ${{env.API_DOC_DIR}} "${{env.ASUNIT_TEXT}}"
           env LANG=en_US.UTF-8 gatherheaderdoc ${{env.API_DOC_DIR}} 
           echo "::endgroup::"
 
-#  save_documentation:
-#    needs: [document, document_api]
-#    - uses: actions/upload-artifact@v4
-#        with:
-#          name: "${{env.DOC_DIR}}"
-#          path: "${{env.DOC_DIR}}"
+  save_documentation:
+    needs: [document, document_api]
+    runs-on: macos-latest
+    - name: Save documentation
+    - uses: actions/upload-artifact@v4
+        with:
+          name: "${{env.DOC_DIR}}"
+          path: "${{env.DOC_DIR}}"
