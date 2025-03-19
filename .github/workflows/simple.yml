@@ -19,7 +19,7 @@ defaults:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  there_can_be_only_one:
+  just_a_job_to_do:
     runs-on: macos-latest
     steps:
       - name: Display system information
