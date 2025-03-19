@@ -4,17 +4,17 @@
 
 name: CI
 
-# Controls when the workflow will run
+## Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
-  # Allows you to run this workflow manually from the Actions tab
+  ## Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+## Global environment
 env:
   API_DOC_DIR: "./doc/api"
   ASUNIT_BNDL: "ASUnit.scptd"
@@ -23,34 +23,42 @@ env:
   DOC_DIR: "./doc"
   UNIT_TEST: "Test\ ASUnit.applescript"
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+## Default values
+defaults:
+  run:
+    shell: bash
+    working_directory: ./ASUnit
+
+## Workflow [jobs can be run sequentially or in parallel]
 jobs:
 
-    
   simple_test:
     runs-on: macos-latest
     steps:
       - name: Runs a test
+        working-directory: ~
         run: echo "Hello, world!"
 
   gestalt:
     runs-on: macos-latest
     steps:
       - name: Display system information
+        working-directory: ~
         run: |
           echo "::group::System Info"
           sw_vers
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
           echo "CWD: $( pwd )"
-          echo "Environment:"; echo
-          env | sort
+          echo "Environment:"
+          env | sort | sed 's/^/  /'
           echo "::endgroup::"
           
   setup:
     runs-on: macos-latest
     steps:
       - name: Create ASUnit library directory
+        working-directory: ~
         run: |
           echo "::group::Create ASUnit library directory"
           echo "CWD: $( pwd )"
@@ -61,14 +69,14 @@ jobs:
     needs: [gestalt, setup]
     runs-on: macos-latest
     steps:
-      - name: Build ASUnit library
+      - name: Checkout repository
+        working_directory: ${{env.TMPDIR}}
         uses: actions/checkout@v4
       - name: Build ASUnit library
-        working-directory: ./ASUnit
         run: |
           echo "::group::Compiling ASUnit"
           echo "CWD: $( pwd )"
-          result=$(osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}})
+          result=$( osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}} )
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
           fi
@@ -79,7 +87,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Install ASUnit library
-        working-directory: ./ASUnit
         run: |
           echo "::group::Installing ASUnit"
           echo "CWD: $( pwd )"
@@ -95,7 +102,7 @@ jobs:
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
-          result=$(osascript "${{env.UNIT_TEST}}")
+          result=$( osascript "${{env.UNIT_TEST}}" )
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{env.UNIT_TEST}}, title=FUBAR::${result}"
           fi
@@ -103,6 +110,7 @@ jobs:
 
   document:
     needs: test
+    if: true
     runs-on: macos-latest
     env:
       README_MD: "README.md"
@@ -110,23 +118,29 @@ jobs:
       OLD_README_MD: "OldManual.md"
       OLD_README_HTML: "OldManual.html"
     steps:
+      - name: Setup for creating documentation
+        run: |
+          if [[ -d "${{env.DOC_DIR}}" ]]; then
+            rm -rf "${{env.DOC_DIR}}/*.html"
+          else
+            mkdir -p "${{env.DOC_DIR}}"
+          fi
       - name: Convert markdown files to HTML
-        working-directory: ./ASUnit
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
-          mkdir -p "${{env.DOC_DIR}}"
       - uses: docker://pandoc/core:3.5
           with:
-            args: >- # allows you to break string into multiple lines
-              --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
-      - uses: docker://pandoc/core:3.5
-          with:
-            args: >- # allows you to break string into multiple lines
-              --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+            args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
+      - name: Inspect README results
         run: |
           if [[ -s "${{env.README_HTML}}" ]]; then
             echo "::error file=${{env.README_HTML}}, title=FUBAR::zero length file"
           fi
+      - uses: docker://pandoc/core:3.5
+          with:
+            args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+      - name: Inspect original README results
+        run: |
           if [[ -s "${{env.OLD_README_HTML}}" ]]; then
             echo "::error file=${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
           fi
@@ -137,7 +151,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Setup for creating documentation
-        working-directory: ./ASUnit
         run: |
           if [[ -d "${{env.API_DOC_DIR}}" ]]; then
             rm -rf "${{env.API_DOC_DIR}}/*"
@@ -145,11 +158,16 @@ jobs:
             mkdir -p "${{env.API_DOC_DIR}}"
           fi
       - name: Create API documentation
-        working-directory: ./ASUnit
         run: |
           echo "::group::Creating API documentation"
-          env LANG=en_US.UTF-8 headerdoc2html -q -o ${{env.API_DOC_DIR}} "${{env.ASUNIT_TEXT}}"
-          env LANG=en_US.UTF-8 gatherheaderdoc ${{env.API_DOC_DIR}} 
+          result=$( headerdoc2html -q -o ${{env.API_DOC_DIR}} "${{env.ASUNIT_TEXT}}" )
+          if [[ $? -ne 0 ]]; then
+            echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
+          fi
+          result=$( gatherheaderdoc ${{env.API_DOC_DIR}} )
+          if [[ $? -ne 0 ]]; then
+            echo "::error title=FUBAR::${result}"
+          fi
           echo "::endgroup::"
 
   save_documentation:
