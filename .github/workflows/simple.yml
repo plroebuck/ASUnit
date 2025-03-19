@@ -19,14 +19,7 @@ defaults:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-
-  simple_test:
-    runs-on: macos-latest
-    steps:
-      - name: Say hello
-        run: echo "Hello, world!"
-
-  gestalt:
+  there_can_be_only_one:
     runs-on: macos-latest
     steps:
       - name: Display system information
@@ -37,28 +30,22 @@ jobs:
           echo "OS: $( uname -sr )"
           echo "::endgroup::"
 
-  environment:
-    runs-on: macos-latest
-    steps:
       - name: Display environment
         run: |
           echo "::group::Environment"
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
-  co:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
+      - name: Checkout
+      - uses: actions/checkout@v4
 
-  cwd:
-    needs: co
-    runs-on: macos-latest
-    working-directory: $$GITHUB_WORKSPACE
-    steps:
       - name: Display current directory and its contents
         run: |
-          echo "::group::CWD"
+          echo "::group::CWD (HOME)"
+          pwd
+          ls -al | sed 's/^/  /'
+          cd $GITHUB_WORKSPACE
+          echo "::group::CWD (GHWS)"
           pwd
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
