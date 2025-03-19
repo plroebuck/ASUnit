@@ -41,6 +41,8 @@ jobs:
           echo "::group::Environment"
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
+      - name: Checkout repository
+      - uses: actions/checkout@v4
       - name: Display current directory and its contents
         run: |
           echo "::group::CWD"
