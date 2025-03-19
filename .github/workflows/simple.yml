@@ -34,11 +34,12 @@ jobs:
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
           echo "::endgroup::"
-      - name: Display environment
-      - run: |
-          echo "::group::Environment"
-          env | sort | sed 's/^/  /'
-          echo "::endgroup::"
+
+#      - name: Display environment
+#      - run: |
+#          echo "::group::Environment"
+#          env | sort | sed 's/^/  /'
+#          echo "::endgroup::"
 
 #      - name: Checkout
 #      - uses: actions/checkout@v4
