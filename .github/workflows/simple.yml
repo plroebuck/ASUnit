@@ -29,7 +29,7 @@ jobs:
     runs-on: ${{ macos-latest }}
     steps:
       - name: Display system information
-      - run: |
+        run: |
           echo "::group::System Info"
           sw_vers
           echo "Architecture: $( uname -p )"
