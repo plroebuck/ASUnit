@@ -36,6 +36,10 @@ jobs:
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
           echo "::endgroup::"
+
+  environment:
+    runs_on: macos-latest
+    steps:
       - name: Display environment
         run: |
           echo "::group::Environment"
@@ -47,6 +51,10 @@ jobs:
     steps:
       - name: Checkout repository
       - uses: actions/checkout@v4
+
+  cwd:
+    runs_on: macos-latest
+    steps:
       - name: Display current directory and its contents
         run: |
           echo "::group::CWD"
