@@ -126,9 +126,9 @@ jobs:
           env LANG=en_US.UTF-8 gatherheaderdoc ${{env.API_DOC_DIR}} 
           echo "::endgroup::"
 
-  save_documentation:
-    needs: [document, document_api]
-    - uses: actions/upload-artifact@v4
-        with:
-          name: "${{env.DOC_DIR}}"
-          path: "${{env.DOC_DIR}}"
+#  save_documentation:
+#    needs: [document, document_api]
+#    - uses: actions/upload-artifact@v4
+#        with:
+#          name: "${{env.DOC_DIR}}"
+#          path: "${{env.DOC_DIR}}"
