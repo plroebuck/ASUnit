@@ -52,9 +52,11 @@ jobs:
     - uses: actions/checkout@v4
 
   cwd:
+    needs: co
     runs-on: macos-latest
     steps:
       - name: Display current directory and its contents
+      working-directory: $GITHUB_WORKFLOW
         run: |
           echo "::group::CWD"
           pwd
