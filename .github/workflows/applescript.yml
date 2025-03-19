@@ -109,7 +109,8 @@ jobs:
 
   document:
     needs: test
-    if: true
+    ## [BUG]: Figure out Docker Pandoc use later
+    if: false
     runs-on: macos-latest
     env:
       README_MD: "README.md"
