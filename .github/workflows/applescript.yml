@@ -148,6 +148,7 @@ jobs:
 
   document_api:
     needs: test
+    if: false
     runs-on: macos-latest
     steps:
       - name: Setup for creating documentation
@@ -172,6 +173,7 @@ jobs:
 
   save_documentation:
     needs: [document, document_api]
+    if: false
     runs-on: macos-latest
     steps:
       - name: Save documentation
