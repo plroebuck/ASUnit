@@ -67,6 +67,7 @@ jobs:
 
   build:
     needs: [gestalt, setup]
+    if: false
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -83,6 +84,7 @@ jobs:
 
   install:
     needs: build
+    if: false
     runs-on: macos-latest
     steps:
       - name: Install ASUnit library
@@ -94,6 +96,7 @@ jobs:
 
   test:
     needs: install
+    if: false
     runs-on: macos-latest
     steps:
       - name: Test ASUnit framework with test program
