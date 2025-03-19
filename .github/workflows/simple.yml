@@ -46,11 +46,10 @@ jobs:
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
-  checkout:
+  co:
     runs-on: macos-latest
-    if: false
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
   cwd:
     runs-on: macos-latest
