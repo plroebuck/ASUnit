@@ -54,6 +54,7 @@ jobs:
   cwd:
     needs: co
     runs-on: macos-latest
+    working-directory: $$GITHUB_WORKSPACE
     steps:
       - name: Display current directory and its contents
         run: |
