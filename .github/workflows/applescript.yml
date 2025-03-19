@@ -58,7 +58,7 @@ jobs:
     needs: [gestalt, setup]
     steps:
       - name: Build ASUnit library
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
         working-directory: ./ASUnit
         run: |
           echo "::group::Compiling ASUnit"
