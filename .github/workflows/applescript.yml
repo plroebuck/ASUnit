@@ -23,8 +23,11 @@ jobs:
     ASUNIT_LIB_DIR: "~/Library/Script\ Libraries/com.lifepillar"
     ASUNIT_TEXT: "ASUnit.applescript"
     ASUNIT_BNDL: "ASUnit.scptd"
+    UNIT_TEST: "Test\ ASUnit.applescript"
+    DOC_DIR: "./doc"
+    API_DOC_DIR: "./doc/api"
     
-  test:
+  simple_test:
     steps:
       - name: Runs a test
         run: echo "Hello, world!"
@@ -33,21 +36,23 @@ jobs:
     steps:
       - name: Display system information
         run: |
-          echo "### System Info ###"
+          echo "::group::System Info"
           sw_vers
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
           echo "CWD: $( pwd )"
           echo "Environment:"; echo
           env | sort
+          echo "::endgroup::"
           
   setup:
     steps:
       - name: Create ASUnit library directory
         run: |
-          echo "Create ASUnit library directory"
+          echo "::group::Create ASUnit library directory"
           echo "CWD: $( pwd )"
-          mkdir -p ${{env.ASUNIT_LIB_DIR}}
+          mkdir -p "${{env.ASUNIT_LIB_DIR}}"
+          echo "::endgroup::"
 
   build:
     needs: [gestalt, setup]
@@ -56,11 +61,13 @@ jobs:
       - uses: actions/checkout@v4
         working-directory: ./ASUnit
         run: |
-          echo "Compiling ASUnit"
+          echo "::group::Compiling ASUnit"
           echo "CWD: $( pwd )"
-          echo "CWD: $( pwd )"
-
-          osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}}
+          result=$(osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}})
+          if [[ $? -ne 0 ]]; then
+            echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
+          fi
+          echo "::endgroup::"
 
   install:
     needs: build
@@ -68,9 +75,10 @@ jobs:
       - name: Install ASUnit library
         working-directory: ./ASUnit
         run: |
-          echo "Installing ASUnit"
+          echo "::group::Installing ASUnit"
           echo "CWD: $( pwd )"
           mv ${{env.ASUNIT_BNDL}} "${{env.ASUNIT_LIB_DIR}}"
+          echo "::endgroup::"
 
   test:
     needs: install
@@ -78,6 +86,49 @@ jobs:
       - name: Test ASUnit framework with test program
         working-directory: ./ASUnit/test
         run: |
-          echo "Testing ASUnit framework with test program"
+          echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
-          osascript "Test\ ASUnit.applescript"
+          result=$(osascript "${{env.UNIT_TEST}}")
+          if [[ $? -ne 0 ]]; then
+            echo "::error file=${{env.UNIT_TEST}}, title=FUBAR::${result}"
+          fi
+          echo "::endgroup::"
+
+  document:
+    needs: test
+    env:
+      README_MD: "README.md"
+      README_HTML: "README.html"
+      OLD_README_MD: "OldManual.md"
+      OLD_README_HTML: "OldManual.html"
+
+    steps:
+      - name: Convert markdown files to HTML
+        uses: pandoc/actions/setup
+        working-directory: ./ASUnit
+        run: |
+          echo "::group::Converting markdown files to HTML for documentation"
+          mkdir -p "${{env.DOC_DIR}}"
+          pandoc --standalone -o "${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+          pandoc --standalone -o "${{env.README_HTML}}" "${{env.README_MD}}"
+          echo "::endgroup::"
+      
+  document_api:
+    needs: test
+    steps:
+      - name: Create API documentation
+        working-directory: ./ASUnit
+        run: |
+          echo "::group::Creating API documentation"
+          rm -rf "${{env.API_DOC_DIR}}"
+          mkdir -p "${{env.API_DOC_DIR}}"
+          env LANG=en_US.UTF-8 headerdoc2html -q -o ${{env.API_DOC_DIR}} "${{env.ASUNIT_TEXT}}"
+          env LANG=en_US.UTF-8 gatherheaderdoc ${{env.API_DOC_DIR}} 
+          echo "::endgroup::"
+
+  save_documentation:
+    needs: [document, document_api]
+    - uses: actions/upload-artifact@v4
+        with:
+          name: "${{env.DOC_DIR}}"
+          path: "${{env.DOC_DIR}}"
