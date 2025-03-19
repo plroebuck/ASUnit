@@ -31,7 +31,7 @@ jobs:
       - name: Display system information
         run: |
           echo "::group::System Info"
-          sw_vers
+          ( sw_vers | tr '\t' '    ' )
           echo "Architecture: $( uname -p )"
           echo "OS: $( uname -sr )"
           echo "::endgroup::"
