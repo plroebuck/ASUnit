@@ -42,9 +42,9 @@ jobs:
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
-    checkout:
-      runs_on: macos-latest
-      steps:
+  checkout:
+    runs_on: macos-latest
+    steps:
       - name: Checkout repository
       - uses: actions/checkout@v4
       - name: Display current directory and its contents
