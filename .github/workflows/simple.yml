@@ -28,25 +28,41 @@ jobs:
     runs-on: ${{ matrix.os }}
 #    runs-on: macos-latest
     steps:
+      - name: Gestalt
+        id: vars
+        run: |
+          echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
+          echo "prodver=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
+          echo "build=$( sw_vers -buildVersion )" >> $GITHUB_OUTPUT
+          echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
+          echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
+          echo "os=$( uname -sr )" >> $GITHUB_OUTPUT
+          echo "applescript=$( osascript -e 'version of AppleScript' )" >> $GITHUB_OUTPUT
+          cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1 )"
+          cpufreq_hz="$( sysctl -n hw.cpufrequency )"
+          ghz=1000000000
+          echo "cpufreq_ghz=$( echo "scale=2; $cpufreq_hz) / $ghz" | bc )" >> $GITHUB_OUTPUT
+          echo "processor=$( echo $cpubrand | sed -e 's/([^][)]*)//g' )" >> $GITHUB_OUTPUT
+          
       - name: Display system information
         run: |
           echo "::group::System Info"
           ( sw_vers | tr '\t' '    ' )
-          arch="$( uname -p )"
-          isa="$( uname -m )"
-          os="$( uname -sr )"
-          applescript="$( osascript -e 'version of AppleScript' )"
-          _cpubrand="$( sysctl -n machdep.cpu.brand_string )"
-          _cpufreq="$( sysctl -n hw.cpufrequency )"
-          _ghz=1000000000
-          cpufreq_ghz="$( echo "scale=2; $_cpufreq) / $ghz" | bc )"
-          processor="$( echo $_cpubrand | cut -d '-' -f 1 | sed -e 's/([^][)]*)//g' )"
-          echo "Architecture: $arch"
-          echo "InstructionSet: $isa"
-          echo "OperatingSystem: $os"
-          echo "AppleScript: $applescript"
-          echo "Processor: $processor"
-          echo "ProcessorSpeed: $cpufreq_ghz GHz"
+          #arch="$( uname -p )"
+          #isa="$( uname -m )"
+          #os="$( uname -sr )"
+          #applescript="$( osascript -e 'version of AppleScript' )"
+          #_cpubrand="$( sysctl -n machdep.cpu.brand_string )"
+          #_cpufreq="$( sysctl -n hw.cpufrequency )"
+          #_ghz=1000000000
+          #cpufreq_ghz="$( echo "scale=2; $_cpufreq) / $ghz" | bc )"
+          #processor="$( echo $_cpubrand | cut -d '-' -f 1 | sed -e 's/([^][)]*)//g' )"
+          printf "%-18s: %s", "Architecture", ${{ steps.vars.outputs.arch }}
+          echo "InstructionSet: ${{ steps.vars.outputs.isa }}"
+          echo "OperatingSystem: ${{ steps.vars.outputs.os }}"
+          echo "AppleScript: ${{ steps.vars.outputs.applescript }}"
+          echo "Processor: ${{ steps.vars.outputs.processor }}"
+          echo "ProcessorSpeed: ${{ steps.vars.outputs.cpufreq_ghz}} GHz"
           echo "::endgroup::"
 
       - name: Display environment
