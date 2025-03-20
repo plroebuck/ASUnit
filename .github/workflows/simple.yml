@@ -33,6 +33,7 @@ jobs:
         run: |
           cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1 )"
           cpufreq_hz="$( sysctl -n hw.cpufrequency )"
+          echo "CPU freq: ${cpufreq_hz} Hz"
           ghz=1000000000
           #---
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
@@ -48,7 +49,7 @@ jobs:
       - name: Display system information
         run: |
           echo "::group::System Info"
-          width=14
+          width=18
           printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
           printf "%-${width}s %s\n"  "Release:"         "${{ steps.vars.outputs.release }}"
           printf "%-${width}s %s\n"  "Build:"           "${{ steps.vars.outputs.build }}"
