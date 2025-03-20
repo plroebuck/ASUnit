@@ -25,12 +25,8 @@ jobs:
     strategy:
       matrix:
         os: [macos-13, macos-14, macos-15]
-#    runs-on: ${{ matrix.os }}
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Everything
-        run: $( sysctl -a )
-
       - name: Gestalt
         id: vars
         run: |
