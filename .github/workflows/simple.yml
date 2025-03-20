@@ -37,7 +37,7 @@ jobs:
           echo "::endgroup::"
 ##
       - name: Display environment
-      - run: |
+        run: |
           echo "::group::Environment"
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
