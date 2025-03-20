@@ -28,12 +28,18 @@ jobs:
     runs-on: ${{ matrix.os }}
 #    runs-on: macos-latest
     steps:
+      - asver
+        run: |
+          filename="/tmp/as_vers.applescript"
+          echo "version of AppleScript" > $filename
+          osascript $filename
       - name: Display system information
         run: |
           echo "::group::System Info"
           ( sw_vers | tr '\t' '    ' )
           echo "Architecture: $( uname -p )"
-          echo "OS: $( uname -sr )"
+          echo "OperatingSystem: $( uname -sr )"
+          echo "AppleScript: $( osascript -e 'version of AppleScript' )"
           echo "::endgroup::"
 
       - name: Display environment
