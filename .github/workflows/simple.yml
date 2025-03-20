@@ -28,6 +28,9 @@ jobs:
 #    runs-on: ${{ matrix.os }}
     runs-on: macos-latest
     steps:
+      - name: Everything
+        run: $( sysctl -a )
+
       - name: Gestalt
         id: vars
         run: |
