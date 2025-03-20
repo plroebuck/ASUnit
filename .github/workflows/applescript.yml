@@ -141,17 +141,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Display the checked-out directory's contents
+        working-directory: $GITHUB_WORKSPACE
         run: |
           ## Display the directory contents
           echo "::group::CWD ($GITHUB_WORKSPACE)"
-          cd $GITHUB_WORKSPACE
           pwd
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
     
       - name: Build ASUnit library
+        working-directory: $GITHUB_WORKSPACE
         run: |
           echo "::group::Compiling ASUnit"
+          pwd
           result=$(osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}})
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
@@ -160,14 +162,16 @@ jobs:
           echo "::endgroup::"
 
       - name: Install ASUnit library
+        working-directory: $GITHUB_WORKSPACE
         run: |
           echo "::group::Installing ASUnit"
+          pwd
           mv ${{env.ASUNIT_BNDL}} "${{env.ASUNIT_LIB_DIR}}"
           ls -al "${{env.ASUNIT_LIB_DIR}}"
           echo "::endgroup::"
 
       - name: Test ASUnit framework with test program
-        working-directory: ./test
+        working-directory: $GITHUB_WORKSPACE/test
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
@@ -178,6 +182,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Setup for creating documentation
+        working-directory: $GITHUB_WORKSPACE
         run: |
           if [[ -d "${{env.DOC_DIR}}" ]]; then
             rm -rf "${{env.DOC_DIR}}/*.html"
@@ -186,17 +191,21 @@ jobs:
           fi
 
       - name: Convert markdown files to HTML
+        working-directory: $GITHUB_WORKSPACE
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
       - name: Convert README.md using Pandoc
+        working-directory: $GITHUB_WORKSPACE
         uses: docker://pandoc/core:3.5
         with:
           args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
       - name: Convert OldManual.md using Pandoc
+        working-directory: $GITHUB_WORKSPACE
         uses: docker://pandoc/core:3.5
         with:
           args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
       - name: Inspect original README results
+        working-directory: $GITHUB_WORKSPACE
         run: |
           ## Say something if the files have no contents
           if [[ -s "${{env.README_HTML}}" ]]; then
