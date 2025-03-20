@@ -57,7 +57,7 @@ jobs:
           #_ghz=1000000000
           #cpufreq_ghz="$( echo "scale=2; $_cpufreq) / $ghz" | bc )"
           #processor="$( echo $_cpubrand | cut -d '-' -f 1 | sed -e 's/([^][)]*)//g' )"
-          printf "%-18s: %s", "Architecture", ${{ steps.vars.outputs.arch }}
+          printf "%-18s:\t%s"  "Architecture"  ${{ steps.vars.outputs.arch }}
           echo "InstructionSet: ${{ steps.vars.outputs.isa }}"
           echo "OperatingSystem: ${{ steps.vars.outputs.os }}"
           echo "AppleScript: ${{ steps.vars.outputs.applescript }}"
