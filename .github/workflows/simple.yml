@@ -51,13 +51,13 @@ jobs:
           #---
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "chip=$( echo ${chip} )" >> $GITHUB_OUTPUT
-          #echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
-          #echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
-          #echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
-          #echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
+          echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
+          echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
+          echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
+          echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
           echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
           echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
-          #echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
+          echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
           #---          
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
@@ -79,8 +79,8 @@ jobs:
             printf "%-${width}s %s\n"  "CPU:"            "${{ steps.vars.outputs.cpu }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
             printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
-            #printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}} GHz"
-            #printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}} GHz"
+            printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}} GHz"
+            printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}} GHz"
           elif [[ "${arch}" == "arm" ]]; then
             printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
