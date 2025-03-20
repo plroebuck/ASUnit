@@ -36,6 +36,7 @@ jobs:
           echo "InstructionSet: $( uname -m )"
           echo "OperatingSystem: $( uname -sr )"
           echo "AppleScript: $( osascript -e 'version of AppleScript' )"
+          echo "Moar: $( sysctl -n machdep.cpu.brand_string | sed -e 's/([^][)]*)//g' )"
           echo "::endgroup::"
 
       - name: Display environment
