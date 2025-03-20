@@ -18,7 +18,7 @@ on:
 env:
   API_DOC_DIR: "./doc/api"
   ASUNIT_BNDL: "ASUnit.scptd"
-  ASUNIT_LIB_DIR: "~/Library/Script\ Libraries/com.lifepillar"
+  ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
   DOC_DIR: "./doc"
   OLD_README_HTML: "OldManual.html"
@@ -157,7 +157,7 @@ jobs:
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
           fi
-          ls -al ${{env.ASUNIT_BNDL}}
+          ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
       - name: Install ASUnit library
