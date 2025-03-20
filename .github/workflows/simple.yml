@@ -30,23 +30,23 @@ jobs:
       - name: MachineDetails
         id: vars
         run: |
-          #system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
-          #pbpaste
-          #modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
-          #ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
-          #memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
+          system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
+          pbpaste
+          modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
+          ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
+          memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
           arch="$( uname -p )"
           if [[ "${arch}" == "i386" ]]; then
             chip="Intel Core"
-            #cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
-            #cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
-            #ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
+            cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
+            cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
+            ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
           elif [[ "${arch}" == "arm" ]]; then
             chip="Apple M1 Virtual"
-            #chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
-            #cpu="N/A"
-            #cpuspeed="N/A"
-            #ncpus="N/A"
+            chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
+            cpu="N/A"
+            cpuspeed="N/A"
+            ncpus="N/A"
           fi
           #---
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
