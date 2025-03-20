@@ -33,25 +33,20 @@ jobs:
           system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
           pbpaste
           modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
-          ncores=$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
-          memory=$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
+          ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
+          memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
           arch="$( uname -p )"
-          if [[ ${arch} == "i386" ]]; then
+          if [[ "${arch}" == "i386" ]]; then
             chip="Intel Core"
             cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
             cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
             ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
-          elif [[ ${arch} == "arm" ]]; then
-            chip=$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
+          elif [[ "${arch}" == "arm" ]]; then
+            chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
             cpu="N/A"
             cpuspeed="N/A"
             ncpus="N/A"
           fi
-
-          #cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1- )"
-          #cpufreq_hz="$( sysctl -n hw.cpufrequency )"
-          #echo "CPU freq: ${cpufreq_hz} Hz"
-          #ghz=1000000000
           #---
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "chip=$( echo ${chip} )" >> $GITHUB_OUTPUT
