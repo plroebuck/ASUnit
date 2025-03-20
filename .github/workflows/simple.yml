@@ -79,14 +79,14 @@ jobs:
             printf "%-${width}s %s\n"  "CPU:"            "${{ steps.vars.outputs.cpu }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
             printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
-            printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}} GHz"
-            printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}} GHz"
+            printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}}"
+            printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}}"
           elif [[ "${arch}" == "arm" ]]; then
             printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
             printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
           fi
-          printf "%-${width}s %s\n"  "#Cores:"          "${{ steps.vars.outputs.ncores}} GHz"
+          printf "%-${width}s %s\n"  "#Cores:"          "${{ steps.vars.outputs.ncores}}"
           printf "%-${width}s %s\n"  "Memory:"          "${{ steps.vars.outputs.memory }}"
           echo "::endgroup::"
           
