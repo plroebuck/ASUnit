@@ -30,33 +30,34 @@ jobs:
       - name: MachineDetails
         id: vars
         run: |
-          system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
-          pbpaste
-          modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
-          ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
-          memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
+          #system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
+          #pbpaste
+          #modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
+          #ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
+          #memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
           arch="$( uname -p )"
           if [[ "${arch}" == "i386" ]]; then
             chip="Intel Core"
-            cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
-            cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
-            ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
+            #cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
+            #cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
+            #ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
           elif [[ "${arch}" == "arm" ]]; then
-            chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
-            cpu="N/A"
-            cpuspeed="N/A"
-            ncpus="N/A"
+            chip="Apple M1 Virtual"
+            #chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
+            #cpu="N/A"
+            #cpuspeed="N/A"
+            #ncpus="N/A"
           fi
           #---
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "chip=$( echo ${chip} )" >> $GITHUB_OUTPUT
-          echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
-          echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
-          echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
-          echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
+          #echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
+          #echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
+          #echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
+          #echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
           echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
           echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
-          echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
+          #echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
           #---          
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
@@ -74,6 +75,7 @@ jobs:
           width=18
           printf "%-${width}s %s\n"  "ModelName:"       "${{ steps.vars.outputs.modelname }}"
           if [[ "${arch} == "i386" ]]; then
+            printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
             printf "%-${width}s %s\n"  "CPU:"            "${{ steps.vars.outputs.cpu }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
             printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
