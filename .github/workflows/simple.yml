@@ -47,22 +47,16 @@ jobs:
       - name: Display system information
         run: |
           echo "::group::System Info"
-          ( sw_vers | tr '\t' '    ' )
-          #arch="$( uname -p )"
-          #isa="$( uname -m )"
-          #os="$( uname -sr )"
-          #applescript="$( osascript -e 'version of AppleScript' )"
-          #_cpubrand="$( sysctl -n machdep.cpu.brand_string )"
-          #_cpufreq="$( sysctl -n hw.cpufrequency )"
-          #_ghz=1000000000
-          #cpufreq_ghz="$( echo "scale=2; $_cpufreq) / $ghz" | bc )"
-          #processor="$( echo $_cpubrand | cut -d '-' -f 1 | sed -e 's/([^][)]*)//g' )"
-          printf "%-18s:\t%s"  "Architecture"  ${{ steps.vars.outputs.arch }}
-          echo "InstructionSet: ${{ steps.vars.outputs.isa }}"
-          echo "OperatingSystem: ${{ steps.vars.outputs.os }}"
-          echo "AppleScript: ${{ steps.vars.outputs.applescript }}"
-          echo "Processor: ${{ steps.vars.outputs.processor }}"
-          echo "ProcessorSpeed: ${{ steps.vars.outputs.cpufreq_ghz}} GHz"
+          width=14
+          printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
+          printf "%-${width}s %s\n"  "Release:"         "${{ steps.vars.outputs.release }}"
+          printf "%-${width}s %s\n"  "Build:"           "${{ steps.vars.outputs.build }}"
+          printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
+          printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
+          printf "%-${width}s %s\n"  "OperatingSystem:" "${{ steps.vars.outputs.os }}"
+          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
+          printf "%-${width}s %s\n"  "Processor:"       "${{ steps.vars.outputs.processor }}"
+          printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpufreq_ghz}} GHz"
           echo "::endgroup::"
 
       - name: Display environment
