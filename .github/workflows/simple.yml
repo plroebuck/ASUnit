@@ -32,11 +32,21 @@ jobs:
         run: |
           echo "::group::System Info"
           ( sw_vers | tr '\t' '    ' )
-          echo "Architecture: $( uname -p )"
-          echo "InstructionSet: $( uname -m )"
-          echo "OperatingSystem: $( uname -sr )"
-          echo "AppleScript: $( osascript -e 'version of AppleScript' )"
-          echo "Moar: $( sysctl -n machdep.cpu.brand_string | sed -e 's/([^][)]*)//g' )"
+          arch="$( uname -p )"
+          isa="$( uname -m )"
+          os="$( uname -sr )"
+          applescript="$( osascript -e 'version of AppleScript' )"
+          _cpubrand="$( sysctl -n machdep.cpu.brand_string )"
+          _cpufreq="$( sysctl -n hw.cpufrequency )"
+          _ghz=1000000000
+          cpufreq_ghz="$( echo "scale=2; $_cpufreq) / $ghz" | bc )"
+          processor="$( echo $_cpubrand | cut -d '-' -f 1 | sed -e 's/([^][)]*)//g' )"
+          echo "Architecture: $arch"
+          echo "InstructionSet: $isa"
+          echo "OperatingSystem: $os"
+          echo "AppleScript: $applescript"
+          echo "Processor: $processor"
+          echo "ProcessorSpeed: $cpufreq_ghz GHz"
           echo "::endgroup::"
 
       - name: Display environment
