@@ -169,6 +169,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Test ASUnit framework with test program
+        working-directory: test
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
