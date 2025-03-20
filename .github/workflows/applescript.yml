@@ -2,7 +2,7 @@
 ### ASUnit Workflow
 ###
 
-name: ASUnitCI
+name: ASUnit_CI
 
 ## Controls when the workflow will run
 on:
@@ -34,7 +34,7 @@ defaults:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  just_a_job_to_do:
+  machine_details:
     strategy:
       matrix:
         os: [macos-13, macos-14, macos-15]
@@ -43,12 +43,16 @@ jobs:
       - name: MachineDetails
         id: vars
         run: |
+          ## Basic system information retrieved, first 4 lines deleted, any blank lines,
+          ## left-whitespace trimmed, then result copied to clipboard
           system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
-          pbpaste
+          #pbpaste    ## Uncomment to see the parsed material
+          ## Parse each invidual detail
           modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
           ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
           memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
           arch="$( uname -p )"
+          ## Naturally, some are different between architectures
           if [[ "${arch}" == "i386" ]]; then
             chip="Intel Core"
             cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
@@ -61,7 +65,7 @@ jobs:
             cpuspeed="N/A"
             ncpus="N/A"
           fi
-          #---
+          ## Now export all the hardware-related variables
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "chip=$( echo ${chip} )" >> $GITHUB_OUTPUT
           echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
@@ -71,19 +75,17 @@ jobs:
           echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
           echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
           echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
-          #---          
-          echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
+          ## Now export all the software-related variables
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
           echo "prodvers=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
           echo "build=$( sw_vers -buildVersion )" >> $GITHUB_OUTPUT
           echo "os=$( uname -sr )" >> $GITHUB_OUTPUT
           echo "applescript=$( osascript -e 'version of AppleScript' )" >> $GITHUB_OUTPUT
-          #echo "processor=$( echo $cpubrand | sed -e 's/([^][)]*)//g' )" >> $GITHUB_OUTPUT
-          #echo "cpufreq_ghz=$( echo "scale=2; $cpufreq_hz) / $ghz" | bc )" >> $GITHUB_OUTPUT
 
       - name: Display hardware information
-       run: |
+        run: |
           echo "::group::Hardware Info"
+          ## Now display everything hardware-related from the "MachineDetails" step
           arch="${{ steps.vars.outputs.arch }}"
           width=18
           printf "%-${width}s %s\n"  "ModelName:"       "${{ steps.vars.outputs.modelname }}"
@@ -106,6 +108,7 @@ jobs:
       - name: Display software information
         run: |
           echo "::group::Software Info"
+          ## Now display everything software-related from the "MachineDetails" step
           width=18
           printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
           printf "%-${width}s %s\n"  "ProductVersion:"  "${{ steps.vars.outputs.prodvers }}"
@@ -114,12 +117,19 @@ jobs:
           printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
           echo "::endgroup::"
 
-     - name: Display environment
+      - name: Display environment
         run: |
           echo "::group::Environment"
+          ## Display the environment variables
           env | sort | sed 's/^/  /'
           echo "::endgroup::"
 
+  just_a_job_to_do:
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
       - name: Create ASUnit library directory
         run: |
           echo "::group::Create ASUnit library directory"
@@ -130,6 +140,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Display the checked-out directory's contents
+        run: |
+          ## Display the directory contents
+          echo "::group::CWD ($GITHUB_WORKSPACE)"
+          cd $GITHUB_WORKSPACE
+          pwd
+          ls -al | sed 's/^/  /'
+          echo "::endgroup::"
+    
       - name: Build ASUnit library
         run: |
           echo "::group::Compiling ASUnit"
@@ -165,6 +184,7 @@ jobs:
           else
             mkdir -p "${{env.DOC_DIR}}"
           fi
+
       - name: Convert markdown files to HTML
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
@@ -178,6 +198,7 @@ jobs:
           args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
       - name: Inspect original README results
         run: |
+          ## Say something if the files have no contents
           if [[ -s "${{env.README_HTML}}" ]]; then
             echo "::error file=${{env.README_HTML}}, title=FUBAR::zero length file"
           fi
