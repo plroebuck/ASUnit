@@ -30,7 +30,7 @@ jobs:
       - name: MachineDetails
         id: vars
         run: |
-          system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | pbcopy
+          system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
           pbpaste
           modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
           ncores=$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
