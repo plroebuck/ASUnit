@@ -33,6 +33,7 @@ jobs:
           echo "::group::System Info"
           ( sw_vers | tr '\t' '    ' )
           echo "Architecture: $( uname -p )"
+          echo "ISA: $( uname -m )"
           echo "OperatingSystem: $( uname -sr )"
           echo "AppleScript: $( osascript -e 'version of AppleScript' )"
           echo "::endgroup::"
