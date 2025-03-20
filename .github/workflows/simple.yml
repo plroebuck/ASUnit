@@ -27,39 +27,62 @@ jobs:
         os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Gestalt
+      - name: MachineDetails
         id: vars
         run: |
-          /usr/sbin/system_profiler SPHardwareDataType
-          cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1 )"
+          modelname=$( system_profiler SPHardwareDataType | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
+          cpu=$( system_profiler SPHardwareDataType | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
+          cpuspeed=$( system_profiler SPHardwareDataType | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
+          ncpus=$( system_profiler SPHardwareDataType | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
+          ncores=$( system_profiler SPHardwareDataType | awk -F':' '/Number of Cores/ { print sprintf("%d", $2) }' )"
+          memory=$( system_profiler SPHardwareDataType | awk -F':' '/Memory/ { print substr($2, 2) }' )"
+          cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1- )"
           cpufreq_hz="$( sysctl -n hw.cpufrequency )"
           echo "CPU freq: ${cpufreq_hz} Hz"
           ghz=1000000000
           #---
+          echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
+          echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
+          echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
+          echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
+          echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
+          echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
+          echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
+          echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
+          #---          
+          echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
           echo "prodvers=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
           echo "build=$( sw_vers -buildVersion )" >> $GITHUB_OUTPUT
-          echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
-          echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
           echo "os=$( uname -sr )" >> $GITHUB_OUTPUT
           echo "applescript=$( osascript -e 'version of AppleScript' )" >> $GITHUB_OUTPUT
           echo "processor=$( echo $cpubrand | sed -e 's/([^][)]*)//g' )" >> $GITHUB_OUTPUT
           echo "cpufreq_ghz=$( echo "scale=2; $cpufreq_hz) / $ghz" | bc )" >> $GITHUB_OUTPUT
-          
-      - name: Display system information
+
+      - name: Display hardware information
         run: |
-          echo "::group::System Info"
+          echo "::group::Hardware Info"
+          width=18
+          printf "%-${width}s %s\n"  "ModelName:"       "${{ steps.vars.outputs.modelname }}"
+          printf "%-${width}s %s\n"  "CPU:"             "${{ steps.vars.outputs.cpu }}"
+          printf "%-${width}s %s\n"  "CPUSpeed:"        "${{ steps.vars.outputs.cpuspeed}} GHz"
+          printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}} GHz"
+          printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}} GHz"
+          printf "%-${width}s %s\n"  "#Cores:"          "${{ steps.vars.outputs.ncores}} GHz"
+          printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
+          printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
+          printf "%-${width}s %s\n"  "Memory:"          "${{ steps.vars.outputs.memory }}"
+          echo "::endgroup::"
+          
+      - name: Display software information
+        run: |
+          echo "::group::Software Info"
           width=18
           printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
           printf "%-${width}s %s\n"  "ProductVersion:"  "${{ steps.vars.outputs.prodvers }}"
           printf "%-${width}s %s\n"  "Build:"           "${{ steps.vars.outputs.build }}"
-          printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
-          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
-          echo
-          printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
           printf "%-${width}s %s\n"  "OperatingSystem:" "${{ steps.vars.outputs.os }}"
-          printf "%-${width}s %s\n"  "Processor:"       "${{ steps.vars.outputs.processor }}"
-          printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpufreq_ghz}} GHz"
+          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
           echo "::endgroup::"
 
       - name: Display environment
