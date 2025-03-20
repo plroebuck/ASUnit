@@ -30,13 +30,14 @@ jobs:
       - name: Gestalt
         id: vars
         run: |
+          /usr/sbin/system_profiler SPHardwareDataType
           cpubrand="$( sysctl -n machdep.cpu.brand_string | cut -d '-' -f 1 )"
           cpufreq_hz="$( sysctl -n hw.cpufrequency )"
           echo "CPU freq: ${cpufreq_hz} Hz"
           ghz=1000000000
           #---
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
-          echo "release=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
+          echo "prodvers=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
           echo "build=$( sw_vers -buildVersion )" >> $GITHUB_OUTPUT
           echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
           echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
@@ -50,12 +51,13 @@ jobs:
           echo "::group::System Info"
           width=18
           printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
-          printf "%-${width}s %s\n"  "Release:"         "${{ steps.vars.outputs.release }}"
+          printf "%-${width}s %s\n"  "ProductVersion:"  "${{ steps.vars.outputs.prodvers }}"
           printf "%-${width}s %s\n"  "Build:"           "${{ steps.vars.outputs.build }}"
           printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
+          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
+          echo
           printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
           printf "%-${width}s %s\n"  "OperatingSystem:" "${{ steps.vars.outputs.os }}"
-          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
           printf "%-${width}s %s\n"  "Processor:"       "${{ steps.vars.outputs.processor }}"
           printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpufreq_ghz}} GHz"
           echo "::endgroup::"
