@@ -28,11 +28,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 #    runs-on: macos-latest
     steps:
-      - asver
-        run: |
-          filename="/tmp/as_vers.applescript"
-          echo "version of AppleScript" > $filename
-          osascript $filename
       - name: Display system information
         run: |
           echo "::group::System Info"
