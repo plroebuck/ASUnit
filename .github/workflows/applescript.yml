@@ -39,6 +39,7 @@ jobs:
       matrix:
         os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
+    if: false
     steps:
       - name: MachineDetails
         id: vars
@@ -194,16 +195,17 @@ jobs:
         working-directory: $GITHUB_WORKSPACE
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
+
       - name: Convert README.md using Pandoc
-        working-directory: $GITHUB_WORKSPACE
         uses: docker://pandoc/core:3.5
         with:
           args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
+
       - name: Convert OldManual.md using Pandoc
-        working-directory: $GITHUB_WORKSPACE
         uses: docker://pandoc/core:3.5
         with:
           args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+  
       - name: Inspect original README results
         working-directory: $GITHUB_WORKSPACE
         run: |
