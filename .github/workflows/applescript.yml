@@ -246,7 +246,6 @@ jobs:
       - name: Generate API documentation
         run: |
           echo "::group::Converting AppleScript file to API documentation"
-          errfile="
           if ! headerdoc2html -q -o ${{env.API_DOC_DIR}} ${{env.ASUNIT_TEXT}}; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::problem extracting comments"
           fi
