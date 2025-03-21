@@ -24,11 +24,13 @@ env:
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
   DOC_DIR: "./doc"
+  HEADERDOC_LOG: "HeaderDoc.log"
   OLD_README_HTML: "OldManual.html"
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
   README_MD: "README.md"
   UNIT_TEST: "Test\ ASUnit.applescript"
+  VAR_LOG_DIR: "./var/log/"
 
 ## Default Values
 defaults:
@@ -152,12 +154,23 @@ jobs:
           pwd
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
-    
+
+      - name: Build log directory
+        run: |
+          echo "::group::Building log directory"
+          pwd
+          mkdir -p "${{ env.VAR_LOG_DIR }}"
+          ls -al | sed 's/^/  /'
+          cd var
+          pwd
+          ls -al | sed 's/^/  /'      
+          echo "::endgroup::"
+
       - name: Build ASUnit library
         run: |
           echo "::group::Compiling ASUnit"
           pwd
-          result=$(osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}})
+          result=$( osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}} )
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
           fi
@@ -199,13 +212,16 @@ jobs:
         run: |
           abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
           abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
+          abs_var_log_dir="${HOME}/var/log/"
           abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
           abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
+          abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
           #---
           echo "abs_doc_dir=$( echo $abs_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_api_doc_dir=$( echo $abs_api_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_readme_html=$( echo $abs_readme_html )" >> $GITHUB_OUTPUT
           echo "abs_old_readme_html=$( echo $abs_old_readme_html )" >> $GITHUB_OUTPUT
+          echo "abs_var_log_dir=$( echo $abs_var_log_dir )" >> $GITHUB_OUTPUT
 
       - name: Convert markdown files to HTML
         run: |
@@ -268,32 +284,30 @@ jobs:
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
-          logfile="${api_doc_dir}/create_api_doc.log"
-          touch ${logfile}
+          logfile="${var_log_dir}"}/${{ HEADERDOC_LOG }}"
+          open 3> ${logfile}
           printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
-          printf "===============================================================" >> ${logfile}
-          printf "$ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}"    >> ${logfile}
-          printf "===============================================================" >> ${logfile}
-          headerdoc2html_cmd="                                              \
-            headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 \
-            | tee -a ${logfile}                                             \
-          )"
-          if ! $headerdoc2html_cmd; then
+          printf '#%.0s' {1..78}                                                   >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
+          printf "## $ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}" >> ${logfile}
+          printf '#%.0s' {1..78}                                                   >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
+          if ! headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} >&3 2>&3 | tee -a ${logfile}; then
             echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
-          printf "===============================================================" >> ${logfile}
-          printf "$ gatherheaderdoc ${api_doc_dir}"                                >> ${logfile}
-          printf "===============================================================" >> ${logfile}
-          gatherheaderdoc_cmd="$(                                           \
-            gatherheaderdoc ${api_doc_dir} 2>&1                             \
-            | tee -a ${logfile}                                             \
-          )"
-          if ! gatherheaderdoc_cmd; then
+          printf '#%.0s' {1..78}                                                   >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
+          printf "## $ gatherheaderdoc ${api_doc_dir}"                             >> ${logfile}
+          printf '#%.0s' {1..78}                                                   >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
+         if ! gatherheaderdoc ${api_doc_dir} >&3 2>&3 | tee -a ${logfile}; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
-          printf "\n\n"                                                          >> ${logfile}
+          printf "\n\n"                                                            >> ${logfile}
+          exec 3>&-    # Explicitly close logfiile
           echo "::endgroup::"
 
       - name: Life moves pretty fast
@@ -309,7 +323,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.runs-on }}"
-          path: "${{ steps.vars.outputs.abs_doc_dir }}"
+          path: \
+            "${{ steps.vars.outputs.abs_doc_dir }}"
+            "${{ steps.vars.outputs.abs_var_log_dir }}"
           retention-days: 5
           overwrite: true
           compression-level: 9
