@@ -126,9 +126,9 @@ jobs:
           echo "::endgroup::"
 
   just_a_job_to_do:
-    strategy:
-      matrix:
-        os: [macos-13, macos-14, macos-15]
+    #strategy:
+    #  matrix:
+    #    os: [macos-13, macos-14, macos-15]
     #runs-on: ${{ matrix.os }}
     runs-on: macos-13
     steps:
