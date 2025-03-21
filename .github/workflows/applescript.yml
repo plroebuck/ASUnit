@@ -3,6 +3,8 @@
 ###
 
 name: ASUnit_CI
+##author: 'plroebuck'
+##description: 'Handles continuous integration for ASUnit, the AppleScript test framework.'
 
 ## Controls when the workflow will run
 on:
@@ -188,19 +190,30 @@ jobs:
             mkdir -p "${{env.DOC_DIR}}"
           fi
 
+      - name: Install Pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: 2.19
+
       - name: Convert markdown files to HTML
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
 
       - name: Convert README.md using Pandoc
-        uses: docker://pandoc/core:3.5
-        with:
-          args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
+        run: pandoc --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
 
       - name: Convert OldManual.md using Pandoc
-        uses: docker://pandoc/core:3.5
-        with:
-          args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+        run: pandoc --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
+  
+ #     - name: Convert README.md using Pandoc
+ #       uses: docker://pandoc/core:3.5
+ #       with:
+ #         args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
+
+ #     - name: Convert OldManual.md using Pandoc
+ #       uses: docker://pandoc/core:3.5
+ #       with:
+ #         args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
   
       - name: Inspect original README results
         run: |
