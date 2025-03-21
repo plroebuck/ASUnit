@@ -242,9 +242,13 @@ jobs:
           if [[ ! -d "${{env.API_DOC_DIR}}" ]]; then
             mkdir -p "${{env.API_DOC_DIR}}"
           fi
+          pwd
+          ls -al
 
       - name: Generate API documentation
         run: |
+          pwd
+          ls -al
           echo "::group::Converting AppleScript file to API documentation"
           if ! headerdoc2html -q -o ${{env.API_DOC_DIR}} ${{env.ASUNIT_TEXT}}; then
             echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::problem extracting comments"
@@ -254,7 +258,13 @@ jobs:
           fi
           echo "::endgroup::"
 
-      - name: Upload Docummentation 
+      - name: here
+        run: |
+          pwd
+          ls -al
+          echo "::notice file=${{env.ARTIFACT_DIR}}/documentation. title=DOWNLOAD ME::"
+
+      - name: Upload Docummentation
         uses: actions/upload-artifact@v4
         with:
           name: "documentation"
