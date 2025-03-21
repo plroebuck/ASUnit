@@ -19,6 +19,7 @@ on:
 ## Global environment
 env:
   API_DOC_DIR: "./doc/api"
+  ARTIFACT_DIR: "${HOME}/doc/"
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
@@ -257,8 +258,8 @@ jobs:
       - name: Upload Docummentation 
         uses: actions/upload-artifact@v4
         with:
-          name="documentation"
-          path: "${{env.DOC_DIR}}"/
+          name: "documentation"
+          path: "${{ env.ARTIFACT_DIR }}"
           retention-days: 5
           overwrite: true
           compression-level: 9
