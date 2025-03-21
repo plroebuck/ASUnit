@@ -271,41 +271,39 @@ jobs:
           ## Log conversion issues, if necessary
           logfile="${api_doc_dir}/create_api_doc.log"
           touch ${logfile}
-          cat "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
-          cat "===============================================================" >> ${logfile}
-          cat "$ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}"    >> ${logfile}
-          cat "===============================================================" >> ${logfile}
-          result="$(
+          printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
+          printf "===============================================================" >> ${logfile}
+          printf "$ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}"    >> ${logfile}
+          printf "===============================================================" >> ${logfile}
+          headerdoc2html_cmd="                                              \
             headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 \
-            | tee -a ${logfile}
+            | tee -a ${logfile}                                             \
           )"
-          if [[ $? -ne 0 ]]; then
+          if ! $headerdoc2html_cmd; then
             echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
-          cat ${result}\n\n\n\n                                                 >> ${logfile}
-          cat "===============================================================" >> ${logfile}
-          cat "$ gatherheaderdoc ${api_doc_dir}"                                >> ${logfile}
-          cat "===============================================================" >> ${logfile}
-          result="$(
-            gatherheaderdoc ${api_doc_dir} 2>&1 \
-            | tee -a ${logfile}
+          printf "\n\n\n\n"                                                        >> ${logfile}
+          printf "===============================================================" >> ${logfile}
+          printf "$ gatherheaderdoc ${api_doc_dir}"                                >> ${logfile}
+          printf "===============================================================" >> ${logfile}
+          gatherheaderdoc_cmd="$(                                           \
+            gatherheaderdoc ${api_doc_dir} 2>&1                             \
+            | tee -a ${logfile}                                             \
           )"
-          if [[ $? -ne 0 ]]; then
+          if ! gatherheaderdoc_cmd; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
-          cat ${result}\n\n                                                     >> ${logfile}
+          printf "\n\n"                                                          >> ${logfile}
           echo "::endgroup::"
 
       - name: Life moves pretty fast
         run: |
           doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
-          artifact_file="${doc_dir}/documentation"
           pwd
           ls -al ${api_doc_dir}
           find ${api_doc_dir} -name "*" -print
           ls -al "${doc_dir}"
-          echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
 
       - name: Upload Docummentation
         uses: actions/upload-artifact@v4
@@ -316,4 +314,16 @@ jobs:
           overwrite: true
           compression-level: 9
           
+      - name: Where did it go
+        run: |
+          doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
+          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          artifact_file="${doc_dir}/documentation-${{ matrix.runs-on }}"
+          pwd
+          ls -al "${doc_dir}"
+          cd doc
+          pwd
+          ls -al ${api_doc_dir}
+          find ${api_doc_dir} -name "*" -print
+          echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
 
