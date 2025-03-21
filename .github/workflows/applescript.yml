@@ -19,7 +19,7 @@ on:
 ## Global environment
 env:
   API_DOC_DIR: "./doc/api"
-  ARTIFACT_DIR: "${HOME}/doc/"
+  ARTIFACT_DIR: "${GITHUB_WORKSPACE}/doc/"
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
