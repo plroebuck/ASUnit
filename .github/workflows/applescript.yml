@@ -202,20 +202,20 @@ jobs:
       - name: Convert README.md using Pandoc
         run: >-
           pandoc
-            --standalone
-            --metadata title="ASUnit, the AppleScript testing framework"
-            --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-            --output="${{env.README_HTML}}"
-            "${{env.README_MD}}"
+          --standalone
+          --metadata title="ASUnit, the AppleScript testing framework"
+          --metadata date="$( date -j +'%FT%TZ%Z%z' )"
+          --output="${{env.README_HTML}}"
+          "${{env.README_MD}}"
 
       - name: Convert OldManual.md using Pandoc
         run: >-
           pandoc
-            --standalone 
-            --metadata title="ASUnit's original user guide"
-            --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-            --output="${{env.OLD_README_HTML}}"
-            "${{env.OLD_README_MD}}"
+          --standalone 
+          --metadata title="ASUnit's original user guide"
+          --metadata date="$( date -j +'%FT%TZ%Z%z' )"
+          --output="${{env.OLD_README_HTML}}"
+          "${{env.OLD_README_MD}}"
   
  #     - name: Convert README.md using Pandoc
  #       uses: docker://pandoc/core:3.5
