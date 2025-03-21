@@ -303,7 +303,7 @@ jobs:
           printf "## $ gatherheaderdoc ${api_doc_dir}"                             >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
-         if ! gatherheaderdoc ${api_doc_dir} >&3 2>&3 | tee -a ${logfile}; then
+          if ! gatherheaderdoc ${api_doc_dir} >&3 2>&3 | tee -a ${logfile}; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
           printf "\n\n"                                                            >> ${logfile}
@@ -332,14 +332,18 @@ jobs:
           
       - name: Where did it go
         run: |
+          var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           artifact_file="${doc_dir}/documentation-${{ matrix.runs-on }}"
           pwd
+          echo "--- ${doc_dir} ---"
           ls -al "${doc_dir}"
-          cd doc
           pwd
-          ls -al ${api_doc_dir}
+          echo "--- ${api_doc_dir} ---"
+          ls -al "${api_doc_dir}"
           find ${api_doc_dir} -name "*" -print
+          echo "--- ${var_log_dir} ---"
+          ls -al "${var_log_dir}"
           echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
 
