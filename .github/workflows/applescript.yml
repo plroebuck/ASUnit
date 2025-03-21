@@ -184,9 +184,7 @@ jobs:
 
       - name: Setup for creating documentation
         run: |
-          if [[ -d "${{env.DOC_DIR}}" ]]; then
-            rm -rf "${{env.DOC_DIR}}/*.html"
-          else
+          if [[ ! -d "${{env.DOC_DIR}}" ]]; then
             mkdir -p "${{env.DOC_DIR}}"
           fi
 
@@ -217,16 +215,6 @@ jobs:
           --output="${{env.DOC_DIR}}/${{env.OLD_README_HTML}}"
           "${{env.OLD_README_MD}}"
   
- #     - name: Convert README.md using Pandoc
- #       uses: docker://pandoc/core:3.5
- #       with:
- #         args: --standalone --output="${{env.README_HTML}}" "${{env.README_MD}}"
-
- #     - name: Convert OldManual.md using Pandoc
- #       uses: docker://pandoc/core:3.5
- #       with:
- #         args: --standalone --output="${{env.OLD_README_HTML}}" "${{env.OLD_README_MD}}"
-  
       - name: Inspect original README results
         run: |
           pwd
@@ -238,8 +226,30 @@ jobs:
           ## Say something if the files have no contents
           if [[ -s "${{env.DOC_DIR}}/${{env.README_HTML}}" ]]; then
             echo "::error file=${{env.DOC_DIR}}/${{env.README_HTML}}, title=FUBAR::zero length file"
+          else
+            head -n 20 "${{env.DOC_DIR}}/${{env.README_HTML}}"
           fi
           if [[ -s "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}" ]]; then
             echo "::error file=${{env.DOC_DIR}}/${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
+          else
+            head -n 20 "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}"
           fi
           echo "::endgroup::"
+
+      - name: Setup for creating API documentation
+        run: |
+          if [[ ! -d "${{env.API_DOC_DIR}}" ]]; then
+            mkdir -p "${{env.API_DOC_DIR}}"
+          fi
+
+      - name: Generate API documentation
+        run: |
+          echo "::group::Converting AppleScript file to API documentation"
+          if ! headerdoc2html -q -o ${{env.API_DOC_DIR}} ${{env.ASUNIT_TEXT}}; then
+            echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::problem extracting comments"
+          fi
+          if ! gatherheaderdoc ${{env.API_DOC_DIR}}; then
+            echo "::error file=${{env.API_DOC_DIR}}, title=FUBAR::problem gathering generated comments"
+          fi
+          echo "::endgroup::"
+
