@@ -250,18 +250,20 @@ jobs:
           pwd
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
-          if ! headerdoc2html -q -o ${{env.API_DOC_DIR}} ${{env.ASUNIT_TEXT}}; then
-            echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::problem extracting comments"
+          if ! headerdoc2html -q -o ${{ env.API_DOC_DIR }} ${{ env.ASUNIT_TEXT }}; then
+            echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
-          if ! gatherheaderdoc ${{env.API_DOC_DIR}}; then
-            echo "::error file=${{env.API_DOC_DIR}}, title=FUBAR::problem gathering generated comments"
+          if ! gatherheaderdoc ${{ env.API_DOC_DIR }}; then
+            echo "::error file=${{ env.API_DOC_DIR }}, title=FUBAR::problem gathering generated comments"
           fi
           echo "::endgroup::"
 
       - name: here
         run: |
           pwd
-          ls -al
+          ls -al ${{ env.DOC_DIR }}
+          find ${{ env.DOC_DIR }} -name "*" -exec ls -al {} \;
+          ls -al "${{ env.ARTIFACT_DIR }}"
           echo "::notice file=${{env.ARTIFACT_DIR}}/documentation. title=DOWNLOAD ME::"
 
       - name: Upload Docummentation
