@@ -229,11 +229,17 @@ jobs:
   
       - name: Inspect original README results
         run: |
+          pwd
+          ls -al
+          echo "----"
+          cd ${{env.DOC_DIR}}
+          pwd
+          ls -al
           ## Say something if the files have no contents
-          if [[ -s "${{env.README_HTML}}" ]]; then
-            echo "::error file=${{env.README_HTML}}, title=FUBAR::zero length file"
+          if [[ -s "${{env.DOC_DIR}}/${{env.README_HTML}}" ]]; then
+            echo "::error file=${{env.DOC_DIR}}/${{env.README_HTML}}, title=FUBAR::zero length file"
           fi
-          if [[ -s "${{env.OLD_README_HTML}}" ]]; then
-            echo "::error file=${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
+          if [[ -s "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}" ]]; then
+            echo "::error file=${{env.DOC_DIR}}/${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
           fi
           echo "::endgroup::"
