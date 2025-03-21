@@ -130,7 +130,7 @@ jobs:
     #  matrix:
     #    os: [macos-13, macos-14, macos-15]
     #runs-on: ${{ matrix.os }}
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - name: Create ASUnit library directory
         run: |
