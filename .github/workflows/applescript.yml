@@ -129,11 +129,11 @@ jobs:
           echo "::endgroup::"
 
   just_a_job_to_do:
-    #strategy:
-    #  matrix:
+    strategy:
+      matrix:
+        os: [macos-14]
     #    os: [macos-13, macos-14, macos-15]
-    #runs-on: ${{ matrix.os }}
-    runs-on: macos-14
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Create ASUnit library directory
         run: |
@@ -194,6 +194,19 @@ jobs:
         with:
           version: 2.19
 
+      - name: Save absolute paths
+        id: vars
+        run: |
+          abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
+          abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
+          abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
+          abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
+          #---
+          echo "abs_doc_dir=$( echo $abs_doc_dir )" >> $GITHUB_OUTPUT
+          echo "abs_api_doc_dir=$( echo $abs_api_doc_dir )" >> $GITHUB_OUTPUT
+          echo "abs_readme_html=$( echo $abs_readme_html )" >> $GITHUB_OUTPUT
+          echo "abs_old_readme_html=$( echo $abs_old_readme_html )" >> $GITHUB_OUTPUT
+
       - name: Convert markdown files to HTML
         run: |
           echo "::group::Converting markdown files to HTML for documentation"
@@ -204,7 +217,7 @@ jobs:
           --standalone
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-          --output="${{env.DOC_DIR}}/${{env.README_HTML}}"
+          --output="${{ steps.vars.outputs.abs_readme_html }}"
           "${{env.README_MD}}"
 
       - name: Convert OldManual.md using Pandoc
@@ -213,7 +226,7 @@ jobs:
           --standalone 
           --metadata title="ASUnit's original user guide"
           --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-          --output="${{env.DOC_DIR}}/${{env.OLD_README_HTML}}"
+          --output="${{ steps.vars.outputs.abs_old_readme_html }}"
           "${{env.OLD_README_MD}}"
   
       - name: Inspect original README results
@@ -221,26 +234,30 @@ jobs:
           pwd
           ls -al
           echo "----"
-          cd ${{env.DOC_DIR}}
+          cd ${{ steps.vars.outputs.abs_doc_dir }}
           pwd
           ls -al
-          ## Say something if the files have no contents
-          if [[ -s "${{env.DOC_DIR}}/${{env.README_HTML}}" ]]; then
-            echo "::error file=${{env.DOC_DIR}}/${{env.README_HTML}}, title=FUBAR::zero length file"
+          ## Say something if README HTML files has no contents
+          readme_html="${{ steps.vars.outputs.abs_readme_html }}"
+          if [[ -s "${readme_html}" ]]; then
+            echo "::error file=${readme_html}, title=FUBAR::zero length file"
           else
-            head -n 20 "${{env.README_HTML}}"
+            head -n 20 "${readme_html}"    # prove it
           fi
-          if [[ -s "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}" ]]; then
-            echo "::error file=${{env.DOC_DIR}}/${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
+          ## Say something if OLDREADME HTML files has no contents
+          old_readme_html="${{ steps.vars.outputs.abs_old_readme_html }}"
+          if [[ -s "${old_readme_html}" ]]; then
+            echo "::error file="${old_readme_html}", title=FUBAR::zero length file"
           else
-            head -n 20 "${{env.OLD_README_HTML}}"
+            head -n 20 "${old_readme_html}"    # prove it
           fi
           echo "::endgroup::"
 
       - name: Setup for creating API documentation
         run: |
-          if [[ ! -d "${{env.API_DOC_DIR}}" ]]; then
-            mkdir -p "${{env.API_DOC_DIR}}"
+          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          if [[ ! -d "${api_doc_dir}" ]]; then
+            mkdir -p "${api_doc_dir}"
           fi
           pwd
           ls -al
@@ -250,27 +267,51 @@ jobs:
           pwd
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
-          if ! headerdoc2html -q -o ${{ env.API_DOC_DIR }} ${{ env.ASUNIT_TEXT }}; then
+          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          ## Log conversion issues, if necessary
+          logfile="${api_doc_dir}/create_api_doc.log"
+          touch ${logfile}
+          cat "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
+          cat "===============================================================" >> ${logfile}
+          cat "$ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}"    >> ${logfile}
+          cat "===============================================================" >> ${logfile}
+          result="$(
+            headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 \
+            | tee -a ${logfile}
+          )"
+          if [[ $? -ne 0 ]]; then
             echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
-          if ! gatherheaderdoc ${{ env.API_DOC_DIR }}; then
-            echo "::error file=${{ env.API_DOC_DIR }}, title=FUBAR::problem gathering generated comments"
+          cat ${result}\n\n\n\n                                                 >> ${logfile}
+          cat "===============================================================" >> ${logfile}
+          cat "$ gatherheaderdoc ${api_doc_dir}"                                >> ${logfile}
+          cat "===============================================================" >> ${logfile}
+          result="$(
+            gatherheaderdoc ${api_doc_dir} 2>&1 \
+            | tee -a ${logfile}
+          )"
+          if [[ $? -ne 0 ]]; then
+            echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
+          cat ${result}\n\n                                                     >> ${logfile}
           echo "::endgroup::"
 
-      - name: here
+      - name: Life moves pretty fast
         run: |
+          doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
+          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          artifact_file="${doc_dir}/documentation"
           pwd
-          ls -al ${{ env.DOC_DIR }}
-          find ${{ env.DOC_DIR }} -name "*" -exec ls -al {} \;
-          ls -al "${{ env.ARTIFACT_DIR }}"
-          echo "::notice file=${{env.ARTIFACT_DIR}}/documentation. title=DOWNLOAD ME::"
+          ls -al ${api_doc_dir}
+          find ${api_doc_dir} -name "*" -print
+          ls -al "${doc_dir}"
+          echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
 
       - name: Upload Docummentation
         uses: actions/upload-artifact@v4
         with:
-          name: "documentation"
-          path: "${{ env.ARTIFACT_DIR }}"
+          name: "documentation-${{ matrix.runs-on }}"
+          path: "${{ steps.vars.outputs.abs_doc_dir }}"
           retention-days: 5
           overwrite: true
           compression-level: 9
