@@ -227,12 +227,12 @@ jobs:
           if [[ -s "${{env.DOC_DIR}}/${{env.README_HTML}}" ]]; then
             echo "::error file=${{env.DOC_DIR}}/${{env.README_HTML}}, title=FUBAR::zero length file"
           else
-            head -n 20 "${{env.DOC_DIR}}/${{env.README_HTML}}"
+            head -n 20 "${{env.README_HTML}}"
           fi
           if [[ -s "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}" ]]; then
             echo "::error file=${{env.DOC_DIR}}/${{env.OLD_README_HTML}}, title=FUBAR::zero length file"
           else
-            head -n 20 "${{env.DOC_DIR}}/${{env.OLD_README_HTML}}"
+            head -n 20 "${{env.OLD_README_HTML}}"
           fi
           echo "::endgroup::"
 
