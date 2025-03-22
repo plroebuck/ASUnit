@@ -1,0 +1,110 @@
+###
+### MachineDetails Reusable Workflow
+###
+
+name: ASUnit_CI
+##author: 'plroebuck'
+##description: 'Handles continuous integration for ASUnit, the AppleScript test framework.'
+
+## Controls when the workflow will run
+on:
+  workflow_call:
+
+## Default Values
+defaults:
+  run:
+    shell: bash
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  machine_details:
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    if: true
+    steps:
+      - name: MachineDetails
+        id: vars
+        run: |
+          ## Basic system information retrieved, first 4 lines deleted, any blank lines,
+          ## left-whitespace trimmed, then result copied to clipboard
+          system_profiler SPHardwareDataType | sed '1,4d' | sed '/./!d' | sed 's/^[ \t]*//' | head -n 10 | pbcopy
+          #pbpaste    ## Uncomment to see the parsed material
+          ## Parse each invidual detail
+          modelname="$( pbpaste | awk -F':' '/Model Name/ { print substr($2, 2) }' )"
+          ncores="$( pbpaste | awk -F':' '/Total Number of Cores/ { print sprintf("%d", $2) }' )"
+          memory="$( pbpaste | awk -F':' '/Memory/ { print substr($2, 2) }' )"
+          arch="$( uname -p )"
+          ## Naturally, some are different between architectures
+          if [[ "${arch}" == "i386" ]]; then
+            chip="Intel Core"
+            cpu="$( pbpaste | awk -F':' '/Processor Name/ { print substr($2, 2) }' )"
+            cpuspeed="$( pbpaste | awk -F':' '/Processor Speed/ { print substr($2, 2) }' )"
+            ncpus="$( pbpaste | awk -F':' '/Number of Processors/ { print sprintf("%d", $2) }' )"
+          elif [[ "${arch}" == "arm" ]]; then
+            chip="Apple M1 Virtual"
+            chip="$( pbpaste | awk -F':' '/Chip/ { print substr($2, 2) }' )"
+            cpu="N/A"
+            cpuspeed="N/A"
+            ncpus="N/A"
+          fi
+          ## Now export all the hardware-related variables
+          echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
+          echo "chip=$( echo ${chip} )" >> $GITHUB_OUTPUT
+          echo "cpu=$( echo ${cpu} )" >> $GITHUB_OUTPUT
+          echo "cpuspeed=$( echo ${cpuspeed} )" >> $GITHUB_OUTPUT
+          echo "ncpus=$( echo ${ncpus} )" >> $GITHUB_OUTPUT
+          echo "ncores=$( echo ${ncores} )" >> $GITHUB_OUTPUT
+          echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
+          echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
+          echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
+          ## Now export all the software-related variables
+          echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
+          echo "prodvers=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
+          echo "build=$( sw_vers -buildVersion )" >> $GITHUB_OUTPUT
+          echo "os=$( uname -sr )" >> $GITHUB_OUTPUT
+          echo "applescript=$( osascript -e 'version of AppleScript' )" >> $GITHUB_OUTPUT
+
+      - name: Display hardware information
+        run: |
+          echo "::group::Hardware Info"
+          ## Now display everything hardware-related from the "MachineDetails" step
+          arch="${{ steps.vars.outputs.arch }}"
+          width=18
+          printf "%-${width}s %s\n"  "ModelName:"       "${{ steps.vars.outputs.modelname }}"
+          if [[ "${arch}" == "i386" ]]; then
+            printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
+            printf "%-${width}s %s\n"  "CPU:"            "${{ steps.vars.outputs.cpu }}"
+            printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
+            printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
+            printf "%-${width}s %s\n"  "ProcessorSpeed:"  "${{ steps.vars.outputs.cpuspeed}}"
+            printf "%-${width}s %s\n"  "#CPUs:"           "${{ steps.vars.outputs.ncpus}}"
+          elif [[ "${arch}" == "arm" ]]; then
+            printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
+            printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
+            printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
+          fi
+          printf "%-${width}s %s\n"  "#Cores:"          "${{ steps.vars.outputs.ncores}}"
+          printf "%-${width}s %s\n"  "Memory:"          "${{ steps.vars.outputs.memory }}"
+          echo "::endgroup::"
+          
+      - name: Display software information
+        run: |
+          echo "::group::Software Info"
+          ## Now display everything software-related from the "MachineDetails" step
+          width=18
+          printf "%-${width}s %s\n"  "ProductName:"     "${{ steps.vars.outputs.prodname }}"
+          printf "%-${width}s %s\n"  "ProductVersion:"  "${{ steps.vars.outputs.prodvers }}"
+          printf "%-${width}s %s\n"  "Build:"           "${{ steps.vars.outputs.build }}"
+          printf "%-${width}s %s\n"  "OperatingSystem:" "${{ steps.vars.outputs.os }}"
+          printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
+          echo "::endgroup::"
+
+      - name: Display environment
+        run: |
+          echo "::group::Environment"
+          ## Display the environment variables
+          env | sort | sed 's/^/  /'
+          echo "::endgroup::"
+
