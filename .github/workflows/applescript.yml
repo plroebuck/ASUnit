@@ -287,7 +287,7 @@ jobs:
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
           logfile="${var_log_dir}/${{ env.HEADERDOC_LOG }}"
-          open 3> ${logfile}
+          exec 3> ${logfile}
           printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
