@@ -314,16 +314,20 @@ jobs:
         run: |
           doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          cd ${doc_dir}
+          pwd
+          ls -al ${doc_dir}
+          cd ${api_doc_dir}
           pwd
           ls -al ${api_doc_dir}
+          echo  "inside api dir"
           find ${api_doc_dir} -name "*" -print
-          ls -al "${doc_dir}"
 
       - name: Upload Docummentation
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.runs-on }}"
-          path: \
+          path: |
             "${{ steps.vars.outputs.abs_doc_dir }}"
             "${{ steps.vars.outputs.abs_var_log_dir }}"
           retention-days: 5
@@ -336,14 +340,19 @@ jobs:
           doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           artifact_file="${doc_dir}/documentation-${{ matrix.runs-on }}"
+          cd ${doc_dir} 
           pwd
-          echo "--- ${doc_dir} ---"
           ls -al "${doc_dir}"
+          cd ${api_doc_dir} 
           pwd
-          echo "--- ${api_doc_dir} ---"
           ls -al "${api_doc_dir}"
+          echo  "inside api dir"
           find ${api_doc_dir} -name "*" -print
-          echo "--- ${var_log_dir} ---"
-          ls -al "${var_log_dir}"
+          cd ${var_log_dir}/..
+          pwd
+          ls -al
+          cd ${var_log_dir}
+          pwd
+          ls -al
           echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
 
