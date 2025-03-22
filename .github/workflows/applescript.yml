@@ -30,7 +30,7 @@ env:
   README_HTML: "README.html"
   README_MD: "README.md"
   UNIT_TEST: "Test\ ASUnit.applescript"
-  VAR_LOG_DIR: "./var/log/"
+  VAR_LOG_DIR: "./var/log"
 
 ## Default Values
 defaults:
@@ -216,12 +216,14 @@ jobs:
           abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
           abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
           abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
+          logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
           #---
           echo "abs_doc_dir=$( echo $abs_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_api_doc_dir=$( echo $abs_api_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_readme_html=$( echo $abs_readme_html )" >> $GITHUB_OUTPUT
           echo "abs_old_readme_html=$( echo $abs_old_readme_html )" >> $GITHUB_OUTPUT
           echo "abs_var_log_dir=$( echo $abs_var_log_dir )" >> $GITHUB_OUTPUT
+          echo "logfile=$( echo $logfile )" >> $GITHUB_OUTPUT
 
       - name: Convert markdown files to HTML
         run: |
@@ -256,16 +258,24 @@ jobs:
           ## Say something if README HTML files has no contents
           readme_html="${{ steps.vars.outputs.abs_readme_html }}"
           if [[ -s "${readme_html}" ]]; then
-            echo "::error file=${readme_html}, title=FUBAR::zero length file"
+            head -n 20 "${readme_html}"        # prove file exists with nonzero length
           else
-            head -n 20 "${readme_html}"    # prove it
+            if [[ -f "${readme_html}" ]]; then
+              echo "::error file="${readme_html}", title=FUBAR::file does not exist"
+            else
+              echo "::error file=${readme_html}, title=FUBAR::zero length file"
+            fi
           fi
           ## Say something if OLDREADME HTML files has no contents
           old_readme_html="${{ steps.vars.outputs.abs_old_readme_html }}"
           if [[ -s "${old_readme_html}" ]]; then
-            echo "::error file="${old_readme_html}", title=FUBAR::zero length file"
+            head -n 20 "${old_readme_html}"    # prove file exists with nonzero length
           else
-            head -n 20 "${old_readme_html}"    # prove it
+            if [[ -f "${old_readme_html}" ]]; then
+              echo "::error file="${old_readme_html}", title=FUBAR::file does not exist"
+            else
+              echo "::error file="${old_readme_html}", title=FUBAR::zero length file"
+            fi
           fi
           echo "::endgroup::"
 
@@ -286,15 +296,15 @@ jobs:
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
-          logfile="${var_log_dir}/${{ env.HEADERDOC_LOG }}"
-          exec 3> ${logfile}
+          logfile="${{ steps.vars.outputs.logfile }}"
+          #exec 3> ${logfile}
           printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
           printf "## $ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}" >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
-          if ! headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} >&3 2>&3 | tee -a ${logfile}; then
+          if ! headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 | tee -a ${logfile}; then
             echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
@@ -303,11 +313,11 @@ jobs:
           printf "## $ gatherheaderdoc ${api_doc_dir}"                             >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
-          if ! gatherheaderdoc ${api_doc_dir} >&3 2>&3 | tee -a ${logfile}; then
+          if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
           printf "\n\n"                                                            >> ${logfile}
-          exec 3>&-    # Explicitly close logfiile
+          #exec 3>&-    # Explicitly close logfiile
           echo "::endgroup::"
 
       - name: Life moves pretty fast
@@ -328,8 +338,10 @@ jobs:
         with:
           name: "documentation-${{ matrix.runs-on }}"
           path: |
-            "${{ steps.vars.outputs.abs_doc_dir }}"
-            "${{ steps.vars.outputs.abs_var_log_dir }}"
+            "${GITHUB_WORKSPACE}/doc/"
+            "${GITHUB_WORKSPACE}/var/log/"
+#            "${{ steps.vars.outputs.abs_doc_dir }}/"
+#            "${{ steps.vars.outputs.abs_var_log_dir }}/"
           retention-days: 5
           overwrite: true
           compression-level: 9
