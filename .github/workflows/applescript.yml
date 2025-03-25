@@ -47,7 +47,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Display machine details
-        uses: plroebuck/machinedetails-action@v0.2.2-alpha
+        uses: plroebuck/machinedetails-action@v0.2.3-alpha
 
   orig_machine_details:
     strategy:
