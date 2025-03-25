@@ -40,7 +40,13 @@ defaults:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   machine_details:
-    uses: .github/actions/machine-details
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Display machine details
+        uses: plroebuck/machinedetails-action@v0.2-alpha
 
   orig_machine_details:
     strategy:
