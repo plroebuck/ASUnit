@@ -2,7 +2,7 @@
 ### ASUnit Workflow
 ###
 ### @abstract Handles continuous integration for ASUnit, the AppleScript test framework.
-### @author: plroebuck
+### @author: (plroebuck)
 ###
 
 name: ASUnit_CI
