@@ -1,10 +1,11 @@
 ###
 ### ASUnit Workflow
 ###
+### @abstract Handles continuous integration for ASUnit, the AppleScript test framework.
+### @author: plroebuck
+###
 
 name: ASUnit_CI
-##author: 'plroebuck'
-##description: 'Handles continuous integration for ASUnit, the AppleScript test framework.'
 
 ## Controls when the workflow will run
 on:
@@ -46,7 +47,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Display machine details
-        uses: plroebuck/machinedetails-action@v0.2.1-alpha.2
+        uses: plroebuck/machinedetails-action@v0.2.2-alpha
 
   orig_machine_details:
     strategy:
