@@ -17,7 +17,7 @@ on:
   ## Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-## Global environment
+## Global Environment
 env:
   API_DOC_DIR: "./doc/api"
   ARTIFACT_DIR: "${GITHUB_WORKSPACE}/doc/"
@@ -31,6 +31,7 @@ env:
   README_HTML: "README.html"
   README_MD: "README.md"
   UNIT_TEST: "Test\ ASUnit.applescript"
+  VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
 
 ## Default Values
@@ -38,7 +39,8 @@ defaults:
   run:
     shell: bash
 
-## A workflow run is made up of one or more jobs that can run sequentially or in parallel
+## Workflow runs are made up of one or more jobs that can either
+## run sequentially or in parallel
 jobs:
   env-debug:
     name: Debug Environment
@@ -63,7 +65,7 @@ jobs:
         os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Display machine details
+      - name: Display Machine Details
         uses: plroebuck/machinedetails-action@v0.2.3-alpha
 
   orig_machine_details:
@@ -115,7 +117,7 @@ jobs:
           echo "os=$( uname -sr )" >> $GITHUB_OUTPUT
           echo "applescript=$( osascript -e 'version of AppleScript' )" >> $GITHUB_OUTPUT
 
-      - name: Display hardware information
+      - name: Display Hardware Information
         run: |
           echo "::group::Hardware Info"
           ## Now display everything hardware-related from the "MachineDetails" step
@@ -138,7 +140,7 @@ jobs:
           printf "%-${width}s %s\n"  "Memory:"          "${{ steps.vars.outputs.memory }}"
           echo "::endgroup::"
           
-      - name: Display software information
+      - name: Display Software Information
         run: |
           echo "::group::Software Info"
           ## Now display everything software-related from the "MachineDetails" step
@@ -150,7 +152,7 @@ jobs:
           printf "%-${width}s %s\n"  "AppleScript:"     "${{ steps.vars.outputs.applescript }}"
           echo "::endgroup::"
 
-      - name: Display environment
+      - name: Display Environment
         run: |
           echo "::group::Environment"
           ## Display the environment variables
@@ -164,7 +166,7 @@ jobs:
     #    os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Create ASUnit library directory
+      - name: Create ASUnit Library Directory
         run: |
           echo "::group::Create ASUnit library directory"
           mkdir -p "${{env.ASUNIT_LIB_DIR}}"
@@ -174,15 +176,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Display the checked-out directory's contents
+      - name: Display the Checked-out Directory's Contents
         run: |
-          ## Display the directory contents
+          ## Display The Directory Contents
           echo "::group::CWD ($GITHUB_WORKSPACE)"
           pwd
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
-      - name: Build log directory
+      - name: Build Log Directory
         run: |
           echo "::group::Building log directory"
           pwd
@@ -193,7 +195,7 @@ jobs:
           ls -al | sed 's/^/  /'      
           echo "::endgroup::"
 
-      - name: Build ASUnit library
+      - name: Build ASUnit Library
         run: |
           echo "::group::Compiling ASUnit"
           pwd
@@ -204,7 +206,7 @@ jobs:
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
-      - name: Install ASUnit library
+      - name: Install ASUnit Library
         run: |
           echo "::group::Installing ASUnit"
           pwd
@@ -347,28 +349,27 @@ jobs:
           #exec 3>&-    # Explicitly close logfiile
           echo "::endgroup::"
 
-      - name: Life moves pretty fast
+      - name: List Documentation Files
         run: |
           doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           cd ${doc_dir}
           pwd
-          ls -al ${doc_dir}
-          cd ${api_doc_dir}
+          ls -al
+          cd api
           pwd
-          ls -al ${api_doc_dir}
-          echo  "inside api dir"
-          find ${api_doc_dir} -name "*" -print
+          ls -al
+          cd ASUnit_applescript
+          pwd
+          ls -al
 
       - name: Upload Docummentation
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.runs-on }}"
           path: |
-            "${GITHUB_WORKSPACE}/doc/"
-            "${GITHUB_WORKSPACE}/var/log/"
-#            "${{ steps.vars.outputs.abs_doc_dir }}/"
-#            "${{ steps.vars.outputs.abs_var_log_dir }}/"
+            "${DOC_DIR}"
+            "${VAR_DIR}"
           retention-days: 5
           overwrite: true
           compression-level: 9
