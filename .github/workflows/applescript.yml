@@ -370,8 +370,8 @@ jobs:
         with:
           name: "documentation-${{ matrix.runs-on }}"
           path: |
-            "${DOC_DIR}"
-            "${VAR_DIR}"
+            "./doc/"
+            "./var/"
           retention-days: 5
           overwrite: true
           compression-level: 9
