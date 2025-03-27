@@ -38,8 +38,21 @@ defaults:
   run:
     shell: bash
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+## A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  env-debug:
+    name: Debug Environment
+    runs-on: macos-latest
+    steps:
+      - name: Environment
+        run:
+          env | sort
+      - name: Round 2
+          env:
+            FUBAR: true
+          run:
+            env | sort
+
   machine_details:
     strategy:
       matrix:
