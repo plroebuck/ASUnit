@@ -55,7 +55,7 @@ jobs:
           env | sort
       - name: Round 3 - Removed?
         run: |
-          env | grep FUBAR
+          env | ( grep FUBAR || echo "Clean" )
 
   machine_details:
     strategy:
