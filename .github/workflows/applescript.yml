@@ -45,13 +45,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Environment
-        run:
+        run: |
           env | sort
       - name: Round 2
-          env:
-            FUBAR: true
-          run:
-            env | sort
+        env:
+          SUPER_SECRET: ${{ secrets.SuperSecret }}
+          FUBAR: true
+        run: |
+          env | sort
+      - name: Round 3 - Removed?
+        run: |
+          env | grep FUBAR
 
   machine_details:
     strategy:
