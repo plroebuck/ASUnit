@@ -31,7 +31,6 @@ env:
   README_HTML: "README.html"
   README_MD: "README.md"
   UNIT_TEST: "Test\ ASUnit.applescript"
-  VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
 
 ## Default Values
@@ -364,6 +363,9 @@ jobs:
           ls -al
 
       - name: Upload Docummentation
+        env:
+          DOC_DIR: "./doc"
+          VAR_DIR: "./var"
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.runs-on }}"
