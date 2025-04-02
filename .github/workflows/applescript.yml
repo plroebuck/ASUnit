@@ -350,8 +350,8 @@ jobs:
 
       - name: Prettify Documentation
         run: |
-          npm install prettier
-          prettier --write doc/**/*.html 
+          (cd ~; npm install prettier)
+          npx prettier --write doc/**/*.html 
 
       - name: List Documentation Files
         run: |
