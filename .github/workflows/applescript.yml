@@ -370,8 +370,8 @@ jobs:
         with:
           name: "documentation-${{ matrix.runs-on }}"
           path: |
-            "${GITHUB_WORKSPACE}/doc/"
-            "${GITHUB_WORKSPACE}/var/"
+            "doc/"
+            "var/"
           retention-days: 0
           overwrite: true
           compression-level: 9
