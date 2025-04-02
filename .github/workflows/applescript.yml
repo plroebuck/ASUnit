@@ -351,7 +351,7 @@ jobs:
       - name: Prettify Documentation
         run: |
           (cd ~; npm install prettier)
-          find doc -name "*.html" -exec npx prettier --write {} \;
+          #find doc -name "*.html" -exec npx prettier --write {} \;
 
       - name: List Documentation Files
         run: |
