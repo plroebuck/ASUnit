@@ -323,32 +323,34 @@ jobs:
           echo "::group::Converting AppleScript file to API documentation"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
+          asunit_text="${{ env.ASUNIT_TEXT }}"
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
-          #exec 3> ${logfile}
+          write_output_header() {
+            local cmd=${1}
+   
+            printf '#%.0s' {1..78}   >> ${logfile}
+            printf "\n"              >> ${logfile}
+            printf "## $ ${cmd}\n"   >> ${logfile}
+            printf '#%.0s' {1..78}   >> ${logfile}
+            printf "\n"              >> ${logfile}
+          }
           printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
-          printf '#%.0s' {1..78}                                                   >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
-          printf "## $ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}" >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
-          printf '#%.0s' {1..78}                                                   >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
-          if ! headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 | tee -a ${logfile}; then
+          write_output_header "headerdoc2html -q -o ${api_doc_dir} ${asunit_text}"
+          if ! headerdoc2html -q -o ${api_doc_dir} ${asunit_text} 2>&1 | tee -a ${logfile}; then
             echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
-          printf '#%.0s' {1..78}                                                   >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
-          printf "## $ gatherheaderdoc ${api_doc_dir}"                             >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
-          printf '#%.0s' {1..78}                                                   >> ${logfile}
-          printf "\n"                                                              >> ${logfile}
+          write_output_header "gatherheaderdoc ${api_doc_dir}"
           if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
           fi
           printf "\n\n"                                                            >> ${logfile}
-          #exec 3>&-    # Explicitly close logfiile
           echo "::endgroup::"
+
+      - name: Prettify Documentation
+        run: |
+          prettier --write doc/**/*.html 
 
       - name: List Documentation Files
         run: |
