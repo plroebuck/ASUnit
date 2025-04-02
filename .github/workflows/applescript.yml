@@ -330,6 +330,7 @@ jobs:
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
           printf "## $ headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }}" >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
           if ! headerdoc2html -q -o ${api_doc_dir} ${{ env.ASUNIT_TEXT }} 2>&1 | tee -a ${logfile}; then
@@ -339,6 +340,7 @@ jobs:
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
           printf "## $ gatherheaderdoc ${api_doc_dir}"                             >> ${logfile}
+          printf "\n"                                                              >> ${logfile}
           printf '#%.0s' {1..78}                                                   >> ${logfile}
           printf "\n"                                                              >> ${logfile}
           if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
@@ -362,19 +364,20 @@ jobs:
           pwd
           ls -al
 
-      - name: Upload Docummentation
+      - name: Upload Documentation
         env:
           DOC_DIR: "./doc"
           VAR_DIR: "./var"
         uses: actions/upload-artifact@v4
         with:
-          name: "documentation-${{ matrix.runs-on }}"
+          name: "documentation-${{ matrix.os }}"
           path: |
-            doc/
-            var/
+            ${{ github.workspace }}/doc/
+            ${{ github.workspace }}/var/
+          if-no-files-found: error
           retention-days: 0
-          overwrite: true
           compression-level: 9
+          overwrite: true
           
       - name: Where did it go
         run: |
