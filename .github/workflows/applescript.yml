@@ -265,12 +265,14 @@ jobs:
           README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-            --standalone
-            --columns=80
-            --metadata title="ASUnit, the AppleScript testing framework"
-            --metadata date="$( date -j +'%FT%TZ' )"
-            --output=$README_HTML
-            $README_MD
+          --from markdown
+          --to html5
+          --standalone
+          --columns=80
+          --metadata title="ASUnit, the AppleScript testing framework"
+          --metadata date="$( date -j +'%FT%TZ' )"
+          --output=$README_HTML
+          $README_MD
 
       - name: Convert README.md to PDF using Pandoc
         env:
@@ -278,11 +280,13 @@ jobs:
           README_PDF: ${{ steps.vars.outputs.abs_readme_pdf }}
         run: >-
           pandoc
-            --columns=80
-            --metadata title="ASUnit, the AppleScript testing framework"
-            --metadata date="$( date -j +'%FT%TZ' )"
-            --output=$README_PDF
-            $README_MD
+          --from markdown
+          --to pdf
+          --columns=80
+          --metadata title="ASUnit, the AppleScript testing framework"
+          --metadata date="$( date -j +'%FT%TZ' )"
+          --output=$README_PDF
+          $README_MD
 
       - name: Convert OldManual.md using Pandoc
         env:
@@ -290,12 +294,14 @@ jobs:
           ORIG_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
-            --standalone 
-            --columns=80
-            --metadata title="ASUnit's original user guide"
-            --metadata date="$( date -j +'%FT%TZ' )"
-            --output=$ORIG_README_HTML
-            $ORIG_README_MD
+          --from markdown
+          --to html
+          --standalone 
+          --columns=80
+          --metadata title="ASUnit's original user guide"
+          --metadata date="$( date -j +'%FT%TZ' )"
+          --output=$ORIG_README_HTML
+          $ORIG_README_MD
   
       - name: Inspect original README results
         run: |
