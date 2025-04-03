@@ -265,8 +265,6 @@ jobs:
           README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-            -f markdown
-            --to html5
             --standalone
             --columns=80
             --metadata title="ASUnit, the AppleScript testing framework"
@@ -280,8 +278,6 @@ jobs:
           README_PDF: ${{ steps.vars.outputs.abs_readme_pdf }}
         run: >-
           pandoc
-            --from markdown
-            --to pdf
             --columns=80
             --metadata title="ASUnit, the AppleScript testing framework"
             --metadata date="$( date -j +'%FT%TZ' )"
@@ -294,8 +290,6 @@ jobs:
           ORIG_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
-            --from markdown
-            --to html
             --standalone 
             --columns=80
             --metadata title="ASUnit's original user guide"
