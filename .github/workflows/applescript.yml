@@ -195,21 +195,28 @@ jobs:
           echo "::endgroup::"
 
       - name: Build ASUnit Library
+        env:
+          ASUNIT_BNDL: "ASUnit.scptd"
+          ASUNIT_TEXT: "ASUnit.applescript"
         run: |
           echo "::group::Compiling ASUnit"
           pwd
-          result=$( osacompile -o ${{env.ASUNIT_BNDL}} -x ${{env.ASUNIT_TEXT}} )
+          result=$( osacompile -o $ASUNIT_BNDL -x $ASUNIT_TEXT )
           if [[ $? -ne 0 ]]; then
-            echo "::error file=${{env.ASUNIT_TEXT}}, title=FUBAR::${result}"
+            echo "::error file=$ASUNIT_TEXT, title=FUBAR::${result}"
           fi
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
       - name: Install ASUnit Library
+        env:
+          ASUNIT_BNDL: "ASUnit.scptd"
         run: |
           echo "::group::Installing ASUnit"
           pwd
-          mv ${{env.ASUNIT_BNDL}} "${{env.ASUNIT_LIB_DIR}}"
+          if ! mv $ASUNIT_BNDL "${{env.ASUNIT_LIB_DIR}}"; then
+            echo "::error file=$ASUNIT_BNDL, title=FUBAR::moving library failed"
+          fi
           ls -al "${{env.ASUNIT_LIB_DIR}}"
           echo "::endgroup::"
 
@@ -264,14 +271,14 @@ jobs:
           README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-            --from markdown
-            --to html5
-            --standalone
-            --columns=80
-            --metadata title="ASUnit, the AppleScript testing framework"
-            --metadata date="$( date -j +'%FT%TZ' )"
-            --output=$README_HTML
-            $README_MD
+          --from markdown
+          --to html5
+          --standalone
+          --columns=80
+          --metadata title="ASUnit, the AppleScript testing framework"
+          --metadata date="$( date -j +'%FT%TZ' )"
+          --output=$README_HTML
+          $README_MD
 
       - name: Convert OldManual.md using Pandoc
         env:
@@ -333,13 +340,14 @@ jobs:
           ls -al
 
       - name: Generate API documentation
+        env:
+          ASUNIT_TEXT: "ASUnit.applescript"
         run: |
           pwd
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
-          asunit_text="${{ env.ASUNIT_TEXT }}"
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
           write_output_header() {
@@ -352,9 +360,9 @@ jobs:
             printf "\n"              >> ${logfile}
           }
           printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
-          write_output_header "headerdoc2html -q -o ${api_doc_dir} ${asunit_text}"
-          if ! headerdoc2html -q -o ${api_doc_dir} ${asunit_text} 2>&1 | tee -a ${logfile}; then
-            echo "::error file=${{ env.ASUNIT_TEXT }}, title=FUBAR::problem extracting comments"
+          write_output_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
+          if ! headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT 2>&1 | tee -a ${logfile}; then
+            echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem extracting comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
           write_output_header "gatherheaderdoc ${api_doc_dir}"
