@@ -265,7 +265,7 @@ jobs:
           README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-            --from markdown
+            -f markdown
             --to html5
             --standalone
             --columns=80
@@ -290,18 +290,18 @@ jobs:
 
       - name: Convert OldManual.md using Pandoc
         env:
-          OLD_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
-          OLD_README_MD: ${{env.OLD_README_MD}}
+          ORIG_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
+          ORIG_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
-          --from markdown
-          --to html
-          --standalone 
-          --columns=80
-          --metadata title="ASUnit's original user guide"
-          --metadata date="$( date -j +'%FT%TZ' )"
-          --output=$OLD_README_HTML
-          $OLD_README_MD
+            --from markdown
+            --to html
+            --standalone 
+            --columns=80
+            --metadata title="ASUnit's original user guide"
+            --metadata date="$( date -j +'%FT%TZ' )"
+            --output=$ORIG_README_HTML
+            $ORIG_README_MD
   
       - name: Inspect original README results
         run: |
