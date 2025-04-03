@@ -30,6 +30,7 @@ env:
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
   README_MD: "README.md"
+  README_PDF: "README.pdf"
   UNIT_TEST: "Test\ ASUnit.applescript"
   VAR_LOG_DIR: "./var/log"
 
@@ -242,6 +243,7 @@ jobs:
           abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
           abs_var_log_dir="${HOME}/var/log/"
           abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
+          abs_readme_pdf="$abs_doc_dir/${{ env.README_PDF }}"
           abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
           abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
           logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
@@ -258,22 +260,48 @@ jobs:
           echo "::group::Converting markdown files to HTML for documentation"
 
       - name: Convert README.md using Pandoc
+        env:
+          README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
+          README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-          --standalone
-          --metadata title="ASUnit, the AppleScript testing framework"
-          --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-          --output="${{ steps.vars.outputs.abs_readme_html }}"
-          "${{env.README_MD}}"
+            --from markdown
+            --to html5
+            --standalone
+            --columns=80
+            --metadata title="ASUnit, the AppleScript testing framework"
+            --metadata date="$( date -j +'%FT%TZ' )"
+            --output=$README_HTML
+            $README_MD
+
+      - name: Convert README.md to PDF using Pandoc
+        env:
+          README_MD: ${{env.README_MD}}
+          README_PDF: ${{ steps.vars.outputs.abs_readme_pdf }}
+        run: >-
+          pandoc
+            --from markdown
+            --to pdf
+            --columns=80
+            --metadata title="ASUnit, the AppleScript testing framework"
+            --metadata date="$( date -j +'%FT%TZ' )"
+            --output=$README_PDF
+            $README_MD
 
       - name: Convert OldManual.md using Pandoc
+        env:
+          OLD_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
+          OLD_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
+          --from markdown
+          --to html
           --standalone 
+          --columns=80
           --metadata title="ASUnit's original user guide"
-          --metadata date="$( date -j +'%FT%TZ%Z%z' )"
-          --output="${{ steps.vars.outputs.abs_old_readme_html }}"
-          "${{env.OLD_README_MD}}"
+          --metadata date="$( date -j +'%FT%TZ' )"
+          --output=$OLD_README_HTML
+          $OLD_README_MD
   
       - name: Inspect original README results
         run: |
