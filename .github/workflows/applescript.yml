@@ -233,7 +233,7 @@ jobs:
 
       - name: Setup for creating documentation
         env:
-          PANDOC_DIR: ${HOME}/.pandoc
+          PANDOC_DIR: .pandoc/
           STYLESHEET: github-markdown.css
           STYLESHEET_URL: https://gist.github.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100#file-github-markdown-css
         run: |
@@ -275,7 +275,7 @@ jobs:
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
-          STYLESHEET: github-markdown.css
+          STYLESHEET: .pandoc/github-markdown.css
         run: >-
           pandoc
           --from gfm
@@ -285,7 +285,7 @@ jobs:
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata description="User Guide"
           --metadata date="$( date -j +'%FT%TZ' )"
-          --css=$HOME/.pandoc/$STYLESHEET
+          --css=$STYLESHEET
           --output=$README_HTML
           $README_MD
 
