@@ -232,9 +232,19 @@ jobs:
           echo "::endgroup::"
 
       - name: Setup for creating documentation
+        env:
+          PANDOC_DIR: ${HOME}/.pandoc
+          STYLESHEET: github-markdown.css
+          STYLESHEET_URL: https://gist.github.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100#file-github-markdown-css
         run: |
           if [[ ! -d "${{env.DOC_DIR}}" ]]; then
             mkdir -p "${{env.DOC_DIR}}"
+          fi
+          if [[ ! -d "$PANDOC_DIR" ]]; then
+            mkdir -p "$PANDOC_DIR"
+          fi
+          if ! curl --output-dir "$PANDOC_DIR" --output "$STYLESHEET" $STYLESHEET_URL; then
+            echo "::error file="$STYLESHEET"::failed to download"
           fi
 
       - name: Install Pandoc
@@ -261,14 +271,11 @@ jobs:
           echo "abs_var_log_dir=$( echo $abs_var_log_dir )" >> $GITHUB_OUTPUT
           echo "logfile=$( echo $logfile )" >> $GITHUB_OUTPUT
 
-      - name: Convert markdown files to HTML
-        run: |
-          echo "::group::Converting markdown files to HTML for documentation"
-
       - name: Convert README.md using Pandoc
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
+          STYLESHEET: github-markdown.css
         run: >-
           pandoc
           --from gfm
@@ -276,7 +283,9 @@ jobs:
           --standalone
           --columns=80
           --metadata title="ASUnit, the AppleScript testing framework"
+          --metadata description="User Guide"
           --metadata date="$( date -j +'%FT%TZ' )"
+          --css=$HOME/.pandoc/$STYLESHEET
           --output=$README_HTML
           $README_MD
 
@@ -286,7 +295,7 @@ jobs:
           ORIG_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
-          --from markdown
+          --from gfm
           --to html
           --standalone 
           --columns=80
@@ -295,13 +304,14 @@ jobs:
           --output=$ORIG_README_HTML
           $ORIG_README_MD
   
-      - name: Inspect original README results
+      - name: Inspect converted documentation
         env:
           ORIG_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
           ORIG_README_MD: ${{env.OLD_README_MD}}
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
         run: |
+          echo "::group::Inspecting converted markdown documentation"
           pwd
           ls -al
           echo "----"
@@ -309,6 +319,7 @@ jobs:
           pwd
           ls -al
           ## Say something if README HTML files has no contents
+          echo "::notice file=$README_HTML::Ensure contents exist"
           if [[ -s $README_HTML ]]; then
             head -n 20 $README_HTML        # prove file exists with nonzero length
           else
@@ -319,6 +330,7 @@ jobs:
             fi
           fi
           ## Say something if OLDREADME HTML files has no contents
+          echo "::notice file=$ORIG_README_HTML::Ensure contents exist"
           if [[ -s $ORIG_README_HTML ]]; then
             head -n 20 $ORIG_README_HTML    # prove file exists with nonzero length
           else
@@ -330,19 +342,14 @@ jobs:
           fi
           echo "::endgroup::"
 
-      - name: Setup for creating API documentation
+      - name: Generate API documentation
+        env:
+          ASUNIT_TEXT: "ASUnit.applescript"
         run: |
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           if [[ ! -d "${api_doc_dir}" ]]; then
             mkdir -p "${api_doc_dir}"
           fi
-          pwd
-          ls -al
-
-      - name: Generate API documentation
-        env:
-          ASUNIT_TEXT: "ASUnit.applescript"
-        run: |
           pwd
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
