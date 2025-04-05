@@ -278,7 +278,7 @@ jobs:
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
-          STYLESHEET: .pandoc/github-markdown.css
+          STYLESHEET: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
         run: >-
           pandoc
           --from gfm
