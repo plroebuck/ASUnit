@@ -271,7 +271,7 @@ jobs:
           README_MD: ${{env.README_MD}}
         run: >-
           pandoc
-          --from markdown
+          --from gfm
           --to html5
           --standalone
           --columns=80
