@@ -244,7 +244,10 @@ jobs:
             mkdir -p "$PANDOC_DIR"
           fi
           if ! curl --output-dir "$PANDOC_DIR" --output "$STYLESHEET" $STYLESHEET_URL; then
-            echo "::error file="$STYLESHEET"::failed to download"
+            head -n 20 $PANDOC_DIR/$STYLESHEET    # prove file exists with nonzero length
+          else
+            echo "::error file=$STYLESHEET, title=FUBAR::failed to download"
+            
           fi
 
       - name: Install Pandoc
@@ -319,7 +322,6 @@ jobs:
           pwd
           ls -al
           ## Say something if README HTML files has no contents
-          echo "::notice file=$README_HTML::Ensure contents exist"
           if [[ -s $README_HTML ]]; then
             head -n 20 $README_HTML        # prove file exists with nonzero length
           else
@@ -330,7 +332,6 @@ jobs:
             fi
           fi
           ## Say something if OLDREADME HTML files has no contents
-          echo "::notice file=$ORIG_README_HTML::Ensure contents exist"
           if [[ -s $ORIG_README_HTML ]]; then
             head -n 20 $ORIG_README_HTML    # prove file exists with nonzero length
           else
