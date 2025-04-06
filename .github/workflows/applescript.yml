@@ -361,9 +361,13 @@ jobs:
           README_HTML: ./doc/README.html
           STYLESHEET: ./doc/styles/github-markdown.css
         run: |
-            mv $README_HTML $README_HTML.pandoc
-            sed -e 's^./assets/^../assets/^' $README_HTML.pandoc > $README_HTML && rm $README_HTML.pandoc
-            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{env.CSS_DIR}}"/$STYLESHEET
+          readme="${{ env.DOC_DIR }}/${{ README_HTML }}"
+          readme_pandoc="${TMPDIR}/${{ README_HTML }}"
+          mv ${readme} ${readme_pandoc}
+          mv ${readme} /tmp/${readme}.pandoc
+          sed -e 's^./assets/^../assets/^' ${readme_pandoc} > ${readme}
+          h1_center="\n#title-block-header {\ntext-align: center;\n}\n"
+          echo "${h1_center}" >> "${{ env.CSS_DIR }}"/$STYLESHEET
 
       - name: Generate API documentation
         env:
