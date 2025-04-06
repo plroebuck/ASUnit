@@ -247,7 +247,6 @@ jobs:
             head -n 20 $PANDOC_DIR/$STYLESHEET    # prove file exists with nonzero length
           else
             echo "::error file=$STYLESHEET, title=FUBAR::failed to download"
-            
           fi
 
       - name: Install Pandoc
@@ -255,7 +254,7 @@ jobs:
         with:
           version: 2.19
 
-      - name: Save absolute paths
+      - name: Save variables to GITHUB_OUTPUT
         id: vars
         run: |
           abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
@@ -266,6 +265,10 @@ jobs:
           abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
           abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
           logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
+          readme_when_off="$( git log -1 --pretty="format:%ci" README.md | sed -e 's/ /T/' -e 's/ //' )"
+          orig_when_off="$( git log -1 --pretty="format:%ci" OldManual.md | sed -e 's/ /T/' -e 's/ //' )"
+          readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%TZ" )"
+          orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%TZ" )"
           #---
           echo "abs_doc_dir=$( echo $abs_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_api_doc_dir=$( echo $abs_api_doc_dir )" >> $GITHUB_OUTPUT
@@ -273,12 +276,15 @@ jobs:
           echo "abs_old_readme_html=$( echo $abs_old_readme_html )" >> $GITHUB_OUTPUT
           echo "abs_var_log_dir=$( echo $abs_var_log_dir )" >> $GITHUB_OUTPUT
           echo "logfile=$( echo $logfile )" >> $GITHUB_OUTPUT
-
+          echo "readme_when=$( echo $readme_when )" >> $GITHUB_OUTPUT
+          echo "orig_when=$( echo $orig_when )" >> $GITHUB_OUTPUT
+       
       - name: Convert README.md using Pandoc
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
           STYLESHEET: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
+#          --css=$STYLESHEET
         run: >-
           pandoc
           --from gfm
@@ -287,8 +293,8 @@ jobs:
           --columns=80
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata description="User Guide"
-          --metadata date="$( date -j +'%FT%TZ' )"
-          --css=$STYLESHEET
+          --metadata date="${{ steps.vars.outputs.readme_when }}"
+          --highlight-style=tango
           --output=$README_HTML
           $README_MD
 
@@ -303,7 +309,7 @@ jobs:
           --standalone 
           --columns=80
           --metadata title="ASUnit's original user guide"
-          --metadata date="$( date -j +'%FT%TZ' )"
+          --metadata date="${{ steps.vars.outputs.orig_when }}"
           --output=$ORIG_README_HTML
           $ORIG_README_MD
   
