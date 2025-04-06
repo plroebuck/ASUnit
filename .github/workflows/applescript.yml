@@ -24,6 +24,7 @@ env:
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
+  CSS_DIR: "./doc/styles"
   DOC_DIR: "./doc"
   HEADERDOC_LOG: "HeaderDoc.log"
   OLD_README_HTML: "OldManual.html"
@@ -233,18 +234,17 @@ jobs:
 
       - name: Setup for creating documentation
         env:
-          PANDOC_DIR: .pandoc/
           STYLESHEET: github-markdown.css
           STYLESHEET_URL: https://gist.github.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100#file-github-markdown-css
         run: |
           if [[ ! -d "${{env.DOC_DIR}}" ]]; then
             mkdir -p "${{env.DOC_DIR}}"
           fi
-          if [[ ! -d "$PANDOC_DIR" ]]; then
-            mkdir -p "$PANDOC_DIR"
+          if [[ ! -d "${{env.CSS_DIR}}" ]]; then
+            mkdir -p "${{env.CSS_DIR}}"
           fi
-          if ! curl --output-dir "$PANDOC_DIR" --output "$STYLESHEET" $STYLESHEET_URL; then
-            head -n 20 $PANDOC_DIR/$STYLESHEET    # prove file exists with nonzero length
+          if ! curl --output-dir "${{env.CSS_DIR}}" --output "$STYLESHEET" $STYLESHEET_URL; then
+            head -n 20 "${{env.CSS_DIR}}"/$STYLESHEET    # prove file exists with nonzero length
           else
             echo "::error file=$STYLESHEET, title=FUBAR::failed to download"
           fi
@@ -287,8 +287,7 @@ jobs:
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
-          STYLESHEET: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
-#          --css=$STYLESHEET
+          STYLESHEET: styles/github-markdown.css
         run: >-
           pandoc
           --from gfm
@@ -300,6 +299,7 @@ jobs:
           --metadata date="${{ steps.vars.outputs.readme_when }}"
           --request-header="X-Content-Type-Options: nosniff"
           --highlight-style=tango
+          --css=$STYLESHEET
           --output=$README_HTML
           $README_MD
 
