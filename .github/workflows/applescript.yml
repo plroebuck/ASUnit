@@ -21,7 +21,7 @@ on:
 env:
   API_DOC_DIR: "./doc/api"
   ARTIFACT_DIR: "${GITHUB_WORKSPACE}/doc/"
-  ASSETS_DIR: ./
+  ASSETS_DIR: "./assets"
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
@@ -32,6 +32,7 @@ env:
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
   README_MD: "README.md"
+  STYLESHEET: "github-markdown.css"
   UNIT_TEST: "Test\ ASUnit.applescript"
   VAR_LOG_DIR: "./var/log"
 
@@ -235,7 +236,6 @@ jobs:
 
       - name: Setup for creating documentation
         env:
-          STYLESHEET: github-markdown.css
           STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
         run: |
           if [[ ! -d "${{env.DOC_DIR}}" ]]; then
@@ -244,11 +244,11 @@ jobs:
           if [[ ! -d "${{env.CSS_DIR}}" ]]; then
             mkdir -p "${{env.CSS_DIR}}"
           fi
-          if ! curl --output-dir "${{env.CSS_DIR}}" --output "$STYLESHEET" $STYLESHEET_URL; then
-            head -n 20 "${{env.CSS_DIR}}"/$STYLESHEET    # prove file exists with nonzero length
-            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{env.CSS_DIR}}"/$STYLESHEET
+          if ! curl --output-dir "${{ env.CSS_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
+            head -n 20 "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
+            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}
           else
-            echo "::error file=$STYLESHEET, title=FUBAR::failed to download"
+            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download"
           fi
 
       - name: Install Pandoc
@@ -289,7 +289,7 @@ jobs:
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
           README_MD: ${{env.README_MD}}
-          STYLESHEET: styles/github-markdown.css
+          STYLESHEET: styles/${{ env.STYLESHEET }}
         run: >-
           pandoc
           --from gfm
@@ -356,18 +356,17 @@ jobs:
           fi
           echo "::endgroup::"
 
-      - name: Patch Documentation
+      - name: Patch HTML Documentation
         env:
-          README_HTML: ./doc/README.html
-          STYLESHEET: ./doc/styles/github-markdown.css
+          README_HTML: "./doc/README.html"
+          STYLESHEET: "./doc/styles/github-markdown.css"
         run: |
-          readme="${{ env.DOC_DIR }}/${{ README_HTML }}"
-          readme_pandoc="${TMPDIR}/${{ README_HTML }}"
+          readme="${{ env.DOC_DIR }}/${{ env.README_HTML }}"
+          readme_pandoc="${TMPDIR}/${{ env.README_HTML }}"
           mv ${readme} ${readme_pandoc}
-          mv ${readme} /tmp/${readme}.pandoc
           sed -e 's^./assets/^../assets/^' ${readme_pandoc} > ${readme}
-          h1_center="\n#title-block-header {\ntext-align: center;\n}\n"
-          echo "${h1_center}" >> "${{ env.CSS_DIR }}"/$STYLESHEET
+          h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
+          echo "${h1_center}\n" >> "${{ env.CSS_DIR }}"/$STYLESHEET
 
       - name: Generate API documentation
         env:
