@@ -420,17 +420,13 @@ jobs:
           ls -al
 
       - name: Upload Documentation
-        env:
-          ASSETS_DIR: ./assets/
-          DOC_DIR: ./doc/
-          VAR_DIR: ./var/
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.os }}"
           path: |
-            $ASSETS_DIR
-            $DOC_DIR
-            $VAR_DIR
+            ${{ env.ASSETS_DIR }}
+            ${{ env.DOC_DIR }}
+            ${{ env.VAR_DIR }}
           if-no-files-found: error
           retention-days: 0
           compression-level: 9
