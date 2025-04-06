@@ -356,6 +356,15 @@ jobs:
           fi
           echo "::endgroup::"
 
+      - name: Patch Documentation
+        env:
+          README_HTML: ./doc/README.html
+          STYLESHEET: ./doc/styles/github-markdown.css
+        run: |
+            mv $README_HTML $README_HTML.pandoc
+            sed -e 's^./assets/^../assets/^' $README_HTML.pandoc > $README_HTML && rm $README_HTML.pandoc
+            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{env.CSS_DIR}}"/$STYLESHEET
+
       - name: Generate API documentation
         env:
           ASUNIT_TEXT: "ASUnit.applescript"
