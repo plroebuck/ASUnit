@@ -298,7 +298,7 @@ jobs:
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata description="User Guide"
           --metadata date="${{ steps.vars.outputs.readme_when }}"
-          --request-header X-Content-Type-Options: nosniff
+          --request-header="X-Content-Type-Options: nosniff"
           --highlight-style=tango
           --output=$README_HTML
           $README_MD
@@ -369,24 +369,26 @@ jobs:
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
-          write_output_header() {
+          write_file_header() {
+            printf "###\n### CREATE_API_DOC_LOG\n###\n\n"  >> ${logfile}
+          }
+          write_cmd_header() {
             local cmd=${1}
-   
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
             printf "## $ ${cmd}\n"   >> ${logfile}
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
           }
-          printf "###\n### CREATE_API_DOC_LOG\n###\n\n"                            >> ${logfile}
-          write_output_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
+          write_file_header
+          write_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
           if ! headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT 2>&1 | tee -a ${logfile}; then
-            echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem extracting comments"
+            echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem generating documentation from source comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
-          write_output_header "gatherheaderdoc ${api_doc_dir}"
+          write_cmd_header "gatherheaderdoc ${api_doc_dir}"
           if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
-            echo "::error file=${api_doc_dir}, title=FUBAR::problem gathering generated comments"
+            echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
           fi
           printf "\n\n"                                                            >> ${logfile}
           echo "::endgroup::"
