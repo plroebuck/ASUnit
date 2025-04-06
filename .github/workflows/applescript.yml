@@ -254,9 +254,10 @@ jobs:
         with:
           version: 2.19
 
-      - name: Save variables to GITHUB_OUTPUT
+      - name: Save values for use in later steps
         id: vars
         run: |
+          echo "::group::Setting variables"
           abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
           abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
           abs_var_log_dir="${HOME}/var/log/"
@@ -269,7 +270,9 @@ jobs:
           orig_when_off="$( git log -1 --pretty="format:%ci" OldManual.md | sed -e 's/ /T/' -e 's/ //' )"
           readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%TZ" )"
           orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%TZ" )"
+          echo "::endgroup::"
           #---
+          echo "::group::Saving values to GITHUB_OUTPUT"
           echo "abs_doc_dir=$( echo $abs_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_api_doc_dir=$( echo $abs_api_doc_dir )" >> $GITHUB_OUTPUT
           echo "abs_readme_html=$( echo $abs_readme_html )" >> $GITHUB_OUTPUT
@@ -278,6 +281,7 @@ jobs:
           echo "logfile=$( echo $logfile )" >> $GITHUB_OUTPUT
           echo "readme_when=$( echo $readme_when )" >> $GITHUB_OUTPUT
           echo "orig_when=$( echo $orig_when )" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
        
       - name: Convert README.md using Pandoc
         env:
@@ -294,6 +298,7 @@ jobs:
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata description="User Guide"
           --metadata date="${{ steps.vars.outputs.readme_when }}"
+          --request-header X-Content-Type-Options: nosniff
           --highlight-style=tango
           --output=$README_HTML
           $README_MD
@@ -441,4 +446,3 @@ jobs:
           pwd
           ls -al
           echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
-
