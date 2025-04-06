@@ -235,7 +235,7 @@ jobs:
       - name: Setup for creating documentation
         env:
           STYLESHEET: github-markdown.css
-          STYLESHEET_URL: https://gist.github.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100#file-github-markdown-css
+          STYLESHEET_URL: https://gist.github.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100
         run: |
           if [[ ! -d "${{env.DOC_DIR}}" ]]; then
             mkdir -p "${{env.DOC_DIR}}"
