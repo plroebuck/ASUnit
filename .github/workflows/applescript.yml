@@ -171,8 +171,8 @@ jobs:
       - name: Create ASUnit Library Directory
         run: |
           echo "::group::Create ASUnit library directory"
-          mkdir -p "${{env.ASUNIT_LIB_DIR}}"
-          ls -al "${{env.ASUNIT_LIB_DIR}}"
+          mkdir -p "${{ env.ASUNIT_LIB_DIR }}"
+          ls -al "${{ env.ASUNIT_LIB_DIR }}"
           echo "::endgroup::"
 
       - name: Checkout
@@ -217,10 +217,10 @@ jobs:
         run: |
           echo "::group::Installing ASUnit"
           pwd
-          if ! mv $ASUNIT_BNDL "${{env.ASUNIT_LIB_DIR}}"; then
+          if ! mv $ASUNIT_BNDL "${{ env.ASUNIT_LIB_DIR }}"; then
             echo "::error file=$ASUNIT_BNDL, title=FUBAR::moving library failed"
           fi
-          ls -al "${{env.ASUNIT_LIB_DIR}}"
+          ls -al "${{ env.ASUNIT_LIB_DIR }}"
           echo "::endgroup::"
 
       - name: Test ASUnit framework with test program
@@ -228,9 +228,9 @@ jobs:
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
-          result=$(osascript "${{env.UNIT_TEST}}")
+          result=$(osascript "${{ env.UNIT_TEST }}")
           if [[ $? -ne 0 ]]; then
-            echo "::error file=${{env.UNIT_TEST}}, title=FUBAR::${result}"
+            echo "::error file=${{ env.UNIT_TEST }}, title=FUBAR::${result}"
           fi
           echo "::endgroup::"
 
@@ -238,13 +238,13 @@ jobs:
         env:
           STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
         run: |
-          if [[ ! -d "${{env.DOC_DIR}}" ]]; then
-            mkdir -p "${{env.DOC_DIR}}"
+          if [[ ! -d "${{ env.DOC_DIR }}" ]]; then
+            mkdir -p "${{ env.DOC_DIR }}"
           fi
-          if [[ ! -d "${{env.CSS_DIR}}" ]]; then
-            mkdir -p "${{env.CSS_DIR}}"
+          if [[ ! -d "${{ env.CSS_DIR }}" ]]; then
+            mkdir -p "${{ env.CSS_DIR }}"
           fi
-          if ! curl --output-dir "${{ env.CSS_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
+          if ! curl --silent --output-dir "${{ env.CSS_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
             head -n 20 "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
             echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}
           else
@@ -288,8 +288,7 @@ jobs:
       - name: Convert README.md using Pandoc
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
-          README_MD: ${{env.README_MD}}
-          STYLESHEET: styles/${{ env.STYLESHEET }}
+          REL_STYLESHEET: styles/${{ env.STYLESHEET }}
         run: >-
           pandoc
           --from gfm
@@ -301,14 +300,13 @@ jobs:
           --metadata date="${{ steps.vars.outputs.readme_when }}"
           --request-header="X-Content-Type-Options: nosniff"
           --highlight-style=tango
-          --css=$STYLESHEET
+          --css="$REL_STYLESHEET"
           --output=$README_HTML
-          $README_MD
+          ${{ env.README_MD }}
 
       - name: Convert OldManual.md using Pandoc
         env:
           ORIG_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
-          ORIG_README_MD: ${{env.OLD_README_MD}}
         run: >-
           pandoc
           --from gfm
@@ -318,14 +316,12 @@ jobs:
           --metadata title="ASUnit's original user guide"
           --metadata date="${{ steps.vars.outputs.orig_when }}"
           --output=$ORIG_README_HTML
-          $ORIG_README_MD
+          ${{ env.OLD_README_MD }}
   
       - name: Inspect converted documentation
         env:
           ORIG_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
-          ORIG_README_MD: ${{env.OLD_README_MD}}
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
-          README_MD: ${{env.README_MD}}
         run: |
           echo "::group::Inspecting converted markdown documentation"
           pwd
