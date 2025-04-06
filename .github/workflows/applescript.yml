@@ -353,16 +353,13 @@ jobs:
           echo "::endgroup::"
 
       - name: Patch HTML Documentation
-        env:
-          README_HTML: "./doc/README.html"
-          STYLESHEET: "./doc/styles/github-markdown.css"
         run: |
           readme="${{ env.DOC_DIR }}/${{ env.README_HTML }}"
           readme_pandoc="${TMPDIR}/${{ env.README_HTML }}"
           mv ${readme} ${readme_pandoc}
           sed -e 's^./assets/^../assets/^' ${readme_pandoc} > ${readme}
           h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
-          echo "${h1_center}\n" >> "${{ env.CSS_DIR }}"/$STYLESHEET
+          echo "${h1_center}\n" >> "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}
 
       - name: Generate API documentation
         env:
