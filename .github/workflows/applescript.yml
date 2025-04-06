@@ -21,6 +21,7 @@ on:
 env:
   API_DOC_DIR: "./doc/api"
   ARTIFACT_DIR: "${GITHUB_WORKSPACE}/doc/"
+  ASSETS_DIR: ./
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
@@ -245,6 +246,7 @@ jobs:
           fi
           if ! curl --output-dir "${{env.CSS_DIR}}" --output "$STYLESHEET" $STYLESHEET_URL; then
             head -n 20 "${{env.CSS_DIR}}"/$STYLESHEET    # prove file exists with nonzero length
+            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{env.CSS_DIR}}"/$STYLESHEET
           else
             echo "::error file=$STYLESHEET, title=FUBAR::failed to download"
           fi
@@ -414,14 +416,16 @@ jobs:
 
       - name: Upload Documentation
         env:
-          DOC_DIR: "./doc"
-          VAR_DIR: "./var"
+          ASSETS_DIR: ./assets/
+          DOC_DIR: ./doc/
+          VAR_DIR: ./var/
         uses: actions/upload-artifact@v4
         with:
           name: "documentation-${{ matrix.os }}"
           path: |
-            ${{ github.workspace }}/doc/
-            ${{ github.workspace }}/var/
+            $ASSETS_DIR
+            $DOC_DIR
+            $VAR_DIR
           if-no-files-found: error
           retention-days: 0
           compression-level: 9
