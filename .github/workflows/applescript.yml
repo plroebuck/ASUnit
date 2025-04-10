@@ -295,6 +295,7 @@ jobs:
           --to html5
           --standalone
           --columns=80
+          --variable lang="en-US"
           --metadata title="ASUnit, the AppleScript testing framework"
           --metadata description="User Guide"
           --metadata date="${{ steps.vars.outputs.readme_when }}"
