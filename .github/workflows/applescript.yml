@@ -389,20 +389,20 @@ jobs:
       - name: Create HeaderDoc configuration file
         run: |
           conffilename="headerDoc2HTML.config"
-          conffile="com.apple.${conffilename}"
-          write_file_header() {
+          conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
+          write_conffile_header() {
             local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${conffile}
           }
-          write_setting() {
+          write_conffile_setting() {
             local setting="$1"
             local value="$2"
             printf "%s => %s\n" "${setting}" "${value}" >> ${conffile}
           }
-          write_file_header "HeaderDoc configuration file"
-          write_setting "copyrightOwner" "lifepillar"
-          write_setting "apiUIDPrefix" "asunit"
-          write_setting "dateFormat" "%F"
+          write_conffile_header "HeaderDoc configuration file"
+          write_conffile_setting "copyrightOwner" "lifepillar"
+          write_conffile_setting "apiUIDPrefix" "asunit"
+          write_conffile_setting "dateFormat" "%F"
           ## :TODO: Needs more
 
       - name: Generate API documentation
@@ -420,11 +420,11 @@ jobs:
           var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
-          write_file_header() {
-            file_desc="$1"
+          write_logfile_header() {
+            local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${logfile}
           }
-          write_cmd_header() {
+          write_logfile_cmd_header() {
             local cmd=${1}
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
@@ -432,13 +432,13 @@ jobs:
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
           }
-          write_file_header "CREATE_API_DOC_LOG"
-          write_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
+          write_logfile_header "CREATE_API_DOC_LOG"
+          write_logfile_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
           if ! headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT 2>&1 | tee -a ${logfile}; then
             echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem generating documentation from source comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
-          write_cmd_header "gatherheaderdoc ${api_doc_dir}"
+          write_logfile_cmd_header "gatherheaderdoc ${api_doc_dir}"
           if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
             echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
           fi
