@@ -253,11 +253,13 @@ jobs:
           fi
           echo "::endgroup::"
           echo "::group::Downloading stylesheet"
-          if ! curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
+          local rc
+          rc=$( curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL )
+          if [[ ${rc} -eq 0 ]]; then
             head -n 20 "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
             echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
           else
-            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download"
+            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download (rc=${rc})"
           fi
           echo "::endgroup::"
           echo "::group::Create SVG image"
