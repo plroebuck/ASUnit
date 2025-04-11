@@ -25,9 +25,11 @@ env:
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
-  CSS_DIR: "./doc/styles"
   DOC_DIR: "./doc"
+  DOC_IMAGES_DIR: "./doc/images"
+  DOC_STYLES_DIR: "./doc/styles"
   HEADERDOC_LOG: "HeaderDoc.log"
+  LIB_PREFS_DIR: "${HOME}/Library/Preferences"
   OLD_README_HTML: "OldManual.html"
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
@@ -66,6 +68,7 @@ jobs:
       matrix:
         os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
+    if: false
     steps:
       - name: Display Machine Details
         uses: plroebuck/machinedetails-action@v0.2.3-alpha
@@ -238,18 +241,38 @@ jobs:
         env:
           STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
         run: |
+          echo "::group::Creating directory structures"
           if [[ ! -d "${{ env.DOC_DIR }}" ]]; then
             mkdir -p "${{ env.DOC_DIR }}"
           fi
-          if [[ ! -d "${{ env.CSS_DIR }}" ]]; then
-            mkdir -p "${{ env.CSS_DIR }}"
+          if [[ ! -d "${{ env.DOC_IMAGES_DIR }}" ]]; then
+            mkdir -p "${{ env.DOC_IMAGES_DIR }}"
           fi
-          if ! curl --silent --output-dir "${{ env.CSS_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
-            head -n 20 "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
-            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}
+          if [[ ! -d "${{ env.DOC_STYLES_DIR }}" ]]; then
+            mkdir -p "${{ env.DOC_STYLES_DIR }}"
+          fi
+          echo "::endgroup::"
+          echo "::group::Downloading stylesheet"
+          if ! curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL; then
+            head -n 20 "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
+            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
           else
             echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download"
           fi
+          echo "::endgroup::"
+          echo "::group::Create SVG image"
+          ## :TODO: name alias should already exist but doesn't
+          cd "${{ env.ASSETS_DIR }}"
+          png_logo_dims="asunit_logo-208x64.png"
+          png_logo="asunit_logo.png"
+          ln -s ${png_logo_dims} ${png_logo}
+          cd "../${{ env.DOC_IMAGES_DIR }}"
+          ## :TODO: this is obviously wrong but achieves the goal short-term
+          ## as documentation will be regenerated constantly, binary image less appealing for repository storage
+          png_logo_rel="../../${{ env.ASSETS_DIR }}/${png_logo}"
+          svg_logo="asunit_logo.svg"
+          ln -s "${png_logo_rel}" ${svg_logo}
+          echo "::endgroup::"
 
       - name: Install Pandoc
         uses: pandoc/actions/setup@v1
@@ -357,10 +380,30 @@ jobs:
         run: |
           readme="${{ env.DOC_DIR }}/${{ env.README_HTML }}"
           readme_pandoc="${TMPDIR}/${{ env.README_HTML }}"
+          png_logo_dims="asunit_logo-208x64.png"
           mv ${readme} ${readme_pandoc}
-          sed -e 's^./assets/^../assets/^' ${readme_pandoc} > ${readme}
+          sed -e 's^./assets/asunit_logo-208x64.png^../images/asunit_log.svg^' ${readme_pandoc} > ${readme}
           h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
-          echo "${h1_center}\n" >> "${{ env.CSS_DIR }}"/${{ env.STYLESHEET }}
+          echo "${h1_center}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
+
+      - name: Create HeaderDoc configuration file
+        run: |
+          conffilename="headerDoc2HTML.config"
+          conffile="com.apple.${conffilename}"
+          write_file_header() {
+            local file_desc="$1"
+            printf "###\n### %s\n###\n\n" "${file_desc}" >> ${conffile}
+          }
+          write_setting() {
+            local setting="$1"
+            local value="$2"
+            printf "%s => %s\n" "${setting}" "${value}" >> ${conffile}
+          }
+          write_file_header "HeaderDoc configuration file"
+          write_setting "copyrightOwner" "lifepillar"
+          write_setting "apiUIDPrefix" "asunit"
+          write_setting "dateFormat" "%F"
+          ## :TODO: Needs more
 
       - name: Generate API documentation
         env:
@@ -378,7 +421,8 @@ jobs:
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
           write_file_header() {
-            printf "###\n### CREATE_API_DOC_LOG\n###\n\n"  >> ${logfile}
+            file_desc="$1"
+            printf "###\n### %s\n###\n\n" "${file_desc}" >> ${logfile}
           }
           write_cmd_header() {
             local cmd=${1}
@@ -388,7 +432,7 @@ jobs:
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
           }
-          write_file_header
+          write_file_header "CREATE_API_DOC_LOG"
           write_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
           if ! headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT 2>&1 | tee -a ${logfile}; then
             echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem generating documentation from source comments"
