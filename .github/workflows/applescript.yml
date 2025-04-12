@@ -36,6 +36,7 @@ env:
   README_MD: "README.md"
   STYLESHEET: "github-markdown.css"
   UNIT_TEST: "Test\ ASUnit.applescript"
+  VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
 
 ## Default Values
@@ -195,7 +196,7 @@ jobs:
           pwd
           mkdir -p "${{ env.VAR_LOG_DIR }}"
           ls -al | sed 's/^/  /'
-          cd var
+          cd "${{ env.VAR_DIR }}"
           pwd
           ls -al | sed 's/^/  /'      
           echo "::endgroup::"
@@ -253,26 +254,26 @@ jobs:
           fi
           echo "::endgroup::"
           echo "::group::Downloading stylesheet"
-          local rc
-          rc=$( curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL )
+          declare errstr
+          errstr=$( curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL | jq -r '.code' )
           if [[ ${rc} -eq 0 ]]; then
             head -n 20 "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
             echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
           else
-            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download (rc=${rc})"
+            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - ${errstr})"
           fi
           echo "::endgroup::"
           echo "::group::Create SVG image"
           ## :TODO: name alias should already exist but doesn't
           cd "${{ env.ASSETS_DIR }}"
-          png_logo_dims="asunit_logo-208x64.png"
-          png_logo="asunit_logo.png"
+          declare png_logo_dims="asunit_logo-208x64.png"
+          declare png_logo="asunit_logo.png"
           ln -s ${png_logo_dims} ${png_logo}
           cd "../${{ env.DOC_IMAGES_DIR }}"
           ## :TODO: this is obviously wrong but achieves the goal short-term
           ## as documentation will be regenerated constantly, binary image less appealing for repository storage
-          png_logo_rel="../../${{ env.ASSETS_DIR }}/${png_logo}"
-          svg_logo="asunit_logo.svg"
+          declare png_logo_rel="../../${{ env.ASSETS_DIR }}/${png_logo}"
+          declare svg_logo="asunit_logo.svg"
           ln -s "${png_logo_rel}" ${svg_logo}
           echo "::endgroup::"
 
@@ -285,18 +286,18 @@ jobs:
         id: vars
         run: |
           echo "::group::Setting variables"
-          abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
-          abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
-          abs_var_log_dir="${HOME}/var/log/"
-          abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
-          abs_readme_pdf="$abs_doc_dir/${{ env.README_PDF }}"
-          abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
-          abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
-          logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
-          readme_when_off="$( git log -1 --pretty="format:%ci" README.md | sed -e 's/ /T/' -e 's/ //' )"
-          orig_when_off="$( git log -1 --pretty="format:%ci" OldManual.md | sed -e 's/ /T/' -e 's/ //' )"
-          readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%TZ" )"
-          orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%TZ" )"
+          declare abs_doc_dir="$( cd ${{ env.DOC_DIR }}; pwd )"
+          declare abs_api_doc_dir="$abs_doc_dir/api/"    # mirror API_DOC_DIR
+          declare abs_var_log_dir="${HOME}/var/log/"
+          declare abs_readme_html="$abs_doc_dir/${{ env.README_HTML }}"
+          declare abs_readme_pdf="$abs_doc_dir/${{ env.README_PDF }}"
+          declare abs_old_readme_html="$abs_doc_dir/${{ env.OLD_README_HTML }}"
+          declare abs_var_log_dir="$( cd ${{ env.VAR_LOG_DIR }}; pwd )"
+          declare logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
+          declare readme_when_off="$( git log -1 --pretty="format:%ci" README.md | sed -e 's/ /T/' -e 's/ //' )"
+          declare orig_when_off="$( git log -1 --pretty="format:%ci" OldManual.md | sed -e 's/ /T/' -e 's/ //' )"
+          declare readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%TZ" )"
+          declare orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%TZ" )"
           echo "::endgroup::"
           #---
           echo "::group::Saving values to GITHUB_OUTPUT"
@@ -357,9 +358,7 @@ jobs:
           pwd
           ls -al
           ## Say something if README HTML files has no contents
-          if [[ -s $README_HTML ]]; then
-            head -n 20 $README_HTML        # prove file exists with nonzero length
-          else
+          if [[ ! -s $README_HTML ]]; then
             if [[ -f $README_HTML ]]; then
               echo "::error file=$README_HTML, title=FUBAR::file does not exist"
             else
@@ -367,9 +366,7 @@ jobs:
             fi
           fi
           ## Say something if OLDREADME HTML files has no contents
-          if [[ -s $ORIG_README_HTML ]]; then
-            head -n 20 $ORIG_README_HTML    # prove file exists with nonzero length
-          else
+          if [[ ! -s $ORIG_README_HTML ]]; then
             if [[ -f $ORIG_README_HTML ]]; then
               echo "::error file=$ORIG_README_HTML, title=FUBAR::file does not exist"
             else
@@ -380,18 +377,19 @@ jobs:
 
       - name: Patch HTML Documentation
         run: |
-          readme="${{ env.DOC_DIR }}/${{ env.README_HTML }}"
-          readme_pandoc="${TMPDIR}/${{ env.README_HTML }}"
-          png_logo_dims="asunit_logo-208x64.png"
+          declare readme="${{ env.DOC_DIR }}/${{ env.README_HTML }}"
+          declare readme_pandoc="${TMPDIR}/${{ env.README_HTML }}"
+          declare png_logo_dims="asunit_logo-208x64.png"
           mv ${readme} ${readme_pandoc}
           sed -e 's^./assets/asunit_logo-208x64.png^../images/asunit_log.svg^' ${readme_pandoc} > ${readme}
-          h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
+          declare h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
           echo "${h1_center}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
+          unset h1_center
 
       - name: Create HeaderDoc configuration file
         run: |
-          conffilename="headerDoc2HTML.config"
-          conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
+          declare conffilename="headerDoc2HTML.config"
+          declare conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
           write_conffile_header() {
             local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${conffile}
@@ -411,17 +409,15 @@ jobs:
         env:
           ASUNIT_TEXT: "ASUnit.applescript"
         run: |
-          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          declare api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           if [[ ! -d "${api_doc_dir}" ]]; then
             mkdir -p "${api_doc_dir}"
           fi
           pwd
           ls -al
           echo "::group::Converting AppleScript file to API documentation"
-          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
-          var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           ## Log conversion issues, if necessary
-          logfile="${{ steps.vars.outputs.logfile }}"
+          declare logfile="${{ steps.vars.outputs.logfile }}"
           write_logfile_header() {
             local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${logfile}
@@ -454,15 +450,18 @@ jobs:
 
       - name: List Documentation Files
         run: |
-          doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
-          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          declare doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
+          declare api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
+          declare projname="ASUnit"
+          declare proglang="applescript"
+          declare impl_api_dir="${api_doc_dir}/${projname}_${proglang}"
           cd ${doc_dir}
           pwd
           ls -al
           cd api
           pwd
           ls -al
-          cd ASUnit_applescript
+          cd ${impl_api_dir}
           pwd
           ls -al
 
@@ -481,22 +480,23 @@ jobs:
           
       - name: Where did it go
         run: |
-          var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
-          doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
-          api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
-          artifact_file="${doc_dir}/documentation-${{ matrix.runs-on }}"
+          declare doc_dir="${{ steps.vars.outputs.abs_doc_dir }}"
           cd ${doc_dir} 
           pwd
           ls -al "${doc_dir}"
+          declare api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
           cd ${api_doc_dir} 
           pwd
           ls -al "${api_doc_dir}"
           echo  "inside api dir"
           find ${api_doc_dir} -name "*" -print
-          cd ${var_log_dir}/..
+          declare var_dir="${{ env.VAR_DIR }}"
+          cd ${var_dir}
           pwd
           ls -al
+          declare var_log_dir="${{ steps.vars.outputs.abs_var_log_dir }}"
           cd ${var_log_dir}
           pwd
           ls -al
+          declare artifact_file="${doc_dir}/documentation-${{ matrix.runs-on }}"
           echo "::notice file=${artifact_file}. title=DOWNLOAD ME::"
