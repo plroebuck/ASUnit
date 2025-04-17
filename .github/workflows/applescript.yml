@@ -384,6 +384,7 @@ jobs:
           h1_center="\n#title-block-header {\n  text-align: center;\n}\n"
           echo "${h1_center}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
           unset h1_center
+          mv ${readme_pandoc} ${readme}
 
       - name: Create HeaderDoc configuration file
         run: |
@@ -435,17 +436,19 @@ jobs:
             echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem generating documentation from source comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
-          write_logfile_cmd_header "gatherheaderdoc ${api_doc_dir}"
-          if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
-            echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
-          fi
+          # :NOTE: Temporary to see what it looks like before assembly
+          #write_logfile_cmd_header "gatherheaderdoc ${api_doc_dir}"
+          #if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
+          #  echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
+          #fi
           printf "\n\n"                                                            >> ${logfile}
           echo "::endgroup::"
 
       - name: Prettify Documentation
+        if: false
         run: |
           (cd ~; npm install prettier)
-          #find doc -name "*.html" -exec npx prettier --write {} \;
+          find doc -name "*.html" -exec npx prettier --write {} \;
 
       - name: List Documentation Files
         run: |
