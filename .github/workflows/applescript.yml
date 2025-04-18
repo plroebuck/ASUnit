@@ -30,6 +30,7 @@ env:
   DOC_STYLES_DIR: "./doc/styles"
   HEADERDOC_LOG: "HeaderDoc.log"
   LIB_PREFS_DIR: "${HOME}/Library/Preferences"
+  LIB_SCRIPT_LIBS_DIR: "${HOME}/Library/Script\ Libraries"
   OLD_README_HTML: "OldManual.html"
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
@@ -105,6 +106,7 @@ jobs:
             cpu="N/A"
             cpuspeed="N/A"
             ncpus="N/A"
+            rosetta2="$( [[ sysctl -in sysctl.proc_translated == '1' ]] && echo "active" || echo "inactive" )"
           fi
           ## Now export all the hardware-related variables
           echo "modelname=$( echo ${modelname} )" >> $GITHUB_OUTPUT
@@ -116,6 +118,7 @@ jobs:
           echo "arch=$( uname -p )" >> $GITHUB_OUTPUT
           echo "isa=$( uname -m )" >> $GITHUB_OUTPUT
           echo "memory=$( echo ${memory} )" >> $GITHUB_OUTPUT
+          echo "rosetta2=$( echo ${rosetta2} )" >> $GITHUB_OUTPUT
           ## Now export all the software-related variables
           echo "prodname=$( sw_vers -productName )" >> $GITHUB_OUTPUT
           echo "prodvers=$( sw_vers -productVersion )" >> $GITHUB_OUTPUT
@@ -141,6 +144,7 @@ jobs:
             printf "%-${width}s %s\n"  "Chip:"           "${{ steps.vars.outputs.chip }}"
             printf "%-${width}s %s\n"  "Architecture:"    "${{ steps.vars.outputs.arch }}"
             printf "%-${width}s %s\n"  "InstructionSet:"  "${{ steps.vars.outputs.isa }}"
+            printf "%${width}s %s\n"   "Rosetta2:"        "${{ steps.vars.outputs.rosetta2 }}"
           fi
           printf "%-${width}s %s\n"  "#Cores:"          "${{ steps.vars.outputs.ncores}}"
           printf "%-${width}s %s\n"  "Memory:"          "${{ steps.vars.outputs.memory }}"
@@ -172,11 +176,16 @@ jobs:
     #    os: [macos-13, macos-14, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Create ApplesScript User Domain Script Library Directory
+        run: |
+          echo "::group::Create ApplesScript user domain script library directory"
+          mkdir -p "${{ env.LIB_SCRIPT_LIBS_DIR }}"
+          echo "::endgroup::"
+
       - name: Create ASUnit Library Directory
         run: |
           echo "::group::Create ASUnit library directory"
           mkdir -p "${{ env.ASUNIT_LIB_DIR }}"
-          ls -al "${{ env.ASUNIT_LIB_DIR }}"
           echo "::endgroup::"
 
       - name: Checkout
@@ -193,9 +202,7 @@ jobs:
       - name: Build Log Directory
         run: |
           echo "::group::Building log directory"
-          pwd
           mkdir -p "${{ env.VAR_LOG_DIR }}"
-          ls -al | sed 's/^/  /'
           cd "${{ env.VAR_DIR }}"
           pwd
           ls -al | sed 's/^/  /'      
@@ -207,11 +214,11 @@ jobs:
           ASUNIT_TEXT: "ASUnit.applescript"
         run: |
           echo "::group::Compiling ASUnit"
-          pwd
           result=$( osacompile -o $ASUNIT_BNDL -x $ASUNIT_TEXT )
           if [[ $? -ne 0 ]]; then
             echo "::error file=$ASUNIT_TEXT, title=FUBAR::${result}"
           fi
+          pwd
           ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
@@ -224,53 +231,118 @@ jobs:
           if ! mv $ASUNIT_BNDL "${{ env.ASUNIT_LIB_DIR }}"; then
             echo "::error file=$ASUNIT_BNDL, title=FUBAR::moving library failed"
           fi
-          ls -al "${{ env.ASUNIT_LIB_DIR }}"
+          cd "${{ env.ASUNIT_LIB_DIR }}"
+          pwd
+          ls -al | sed 's/^/  /'
           echo "::endgroup::"
 
-      - name: Test ASUnit framework with test program
+      - name: Test ASUnit framework
         working-directory: test
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
-          result=$(osascript "${{ env.UNIT_TEST }}")
+          result=$( osascript "${{ env.UNIT_TEST }}" )
           if [[ $? -ne 0 ]]; then
             echo "::error file=${{ env.UNIT_TEST }}, title=FUBAR::${result}"
           fi
           echo "::endgroup::"
 
-      - name: Setup for creating documentation
-        env:
-          STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
+      - name: Create ASUnit HTML Documentation Directories
         run: |
-          echo "::group::Creating directory structures"
-          if [[ ! -d "${{ env.DOC_DIR }}" ]]; then
+          is_a_directory() {
+            local dir="$1"
+            [[ -d "${dir}" ]]
+          }
+          echo "::group::Creating HTML directory structures"
+          if ! is_a_directory "${{ env.DOC_DIR }}"; then
             mkdir -p "${{ env.DOC_DIR }}"
           fi
-          if [[ ! -d "${{ env.DOC_IMAGES_DIR }}" ]]; then
+          if ! is_a_directory "${{ env.DOC_IMAGES_DIR }}"; then
             mkdir -p "${{ env.DOC_IMAGES_DIR }}"
           fi
-          if [[ ! -d "${{ env.DOC_STYLES_DIR }}" ]]; then
+          if ! is_a_directory "${{ env.DOC_STYLES_DIR }}"; then
             mkdir -p "${{ env.DOC_STYLES_DIR }}"
           fi
           echo "::endgroup::"
-          echo "::group::Downloading stylesheet"
-          errstr=$( curl --silent --output-dir "${{ env.DOC_STYLES_DIR }}" --output "${{ env.STYLESHEET }}" $STYLESHEET_URL | jq -r '.code' )
+  
+      - name: Create HTML Stylesheet
+        env:
+          STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
+        run: |
+          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.STYLESHEET }}"
+          stylesheet_write_blank_line() {
+            printf '\n'                              >> ${stylesheet}
+          }
+          stylesheet_write_header() {
+            local filename="$1"
+            local url="$2"
+            local file_desc="$1"
+            printf '/***\n'                          >> ${stylesheet}
+            printf ' ***\n'                          >> ${stylesheet}
+            printf ' *** %s\n' "${filename}"         >> ${stylesheet}
+            printf ' ***\n'                          >> ${stylesheet}
+            printf ' *** DerivationOf: <%s>\n' "url" >> ${stylesheet}
+            printf ' ***\n'                          >> ${stylesheet}
+            printf ' ***/\n'                         >> ${stylesheet}
+            stylesheet_write_blank_line
+            stylesheet_write_blank_line
+          }
+          stylesheet_write_center_heading_elem() {
+            printf '#title-block-header {\n'         >> "${stylesheet}"
+            printf '  text-align: center;\n'         >> "${stylesheet}"
+            printf '}\n'                             >> "${stylesheet}"
+            stylesheet_write_blank_line
+          }
+          stylesheet_write_regeneration_required() {
+            local notice='    <<< REGENERATE THIS FILE >>>'
+            local errmsg='Primary portion of stylesheet is missing'
+            local fixmsg='Download Gist (from URL above) again and append its contents manually'
+            stylesheet_write_blank_line
+            stylesheet_write_blank_line
+            printf '/**\n'                           >> "${stylesheet}"
+            printf ' ** %s\n' "${notice}"            >> "${stylesheet}"
+            printf ' ** ERROR: %s\n' "${errmsg}"     >> "${stylesheet}"
+            printf ' ** FIX:   %s\n' "${fixmsg}"     >> "${stylesheet}"
+            printf ' ** %s\n' "${notice}"            >> "${stylesheet}"
+            printf ' **/\n'                          >> "${stylesheet}"
+            stylesheet_write_blank_line
+            stylesheet_write_blank_line
+          }
+          stylesheet_write_header "${{ env.STYLESHEET }}" "${{ env.STYLESHEET_URL }}"
+          echo "::group::Downloading source stylesheet"
+          stdio="$( curl --silent $STYLESHEET_URL )"
+          rc=$?
           if [[ ${rc} -eq 0 ]]; then
-            head -n 20 "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}    # prove file exists with nonzero length
-            echo "\n#title-block-header {\ntext-align: center;\n}\n" >> "${{ env.DOC_STYLES_DIR }}"/${{ env.STYLESHEET }}
+            cat "${stdio}\n"                         >> "${stylesheet}"
           else
-            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - ${errstr})"
+            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
+           stylesheet_write_regeneration_required
+         fi
+          echo "::endgroup::"
+
+      - name: Symlink PNG Image
+        run: |
+          is_a_symlink_file() {
+            local file="$1"
+            [[ -h "${file}" ]]
+          }
+          echo "::group::Symlink PNG image"
+          ## :TODO: symlink name alias should already exist but doesn't
+          cd "${{ env.ASSETS_DIR }}"
+          png_logo="asunit_logo.png"
+          if ! is_a_symlink_file ${png_logo}; then
+            png_logo_dims="asunit_logo-208x64.png"
+            ln -s ${png_logo_dims} ${png_logo}
           fi
           echo "::endgroup::"
+
+      - name: Create SVG Image
+        run: |
           echo "::group::Create SVG image"
-          ## :TODO: name alias should already exist but doesn't
-          cd "${{ env.ASSETS_DIR }}"
-          png_logo_dims="asunit_logo-208x64.png"
-          png_logo="asunit_logo.png"
-          ln -s ${png_logo_dims} ${png_logo}
           cd "../${{ env.DOC_IMAGES_DIR }}"
           ## :TODO: this is obviously wrong but achieves the goal short-term
           ## as documentation will be regenerated constantly, binary image less appealing for repository storage
+          png_logo="asunit_logo.png"
           png_logo_rel="../../${{ env.ASSETS_DIR }}/${png_logo}"
           svg_logo="asunit_logo.svg"
           ln -s "${png_logo_rel}" ${svg_logo}
@@ -350,6 +422,14 @@ jobs:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
         run: |
           echo "::group::Inspecting converted markdown documentation"
+          is_an_existing_file() {
+            local file="$1"
+            [[ -f "${file}" ]]
+          }
+          is_a_nonempty_file() {
+            local file="$1"
+            [[ -s "${file}" ]]
+          }
           pwd
           ls -al
           echo "----"
@@ -357,16 +437,16 @@ jobs:
           pwd
           ls -al
           ## Say something if README HTML files has no contents
-          if [[ ! -s $README_HTML ]]; then
-            if [[ -f $README_HTML ]]; then
+          if ! is_a_nonempty_file $README_HTML; then
+            if ! is_an_existing_file $README_HTML; then
               echo "::error file=$README_HTML, title=FUBAR::file does not exist"
             else
               echo "::error file=$README_HTML, title=FUBAR::zero length file"
             fi
           fi
           ## Say something if OLDREADME HTML files has no contents
-          if [[ ! -s $ORIG_README_HTML ]]; then
-            if [[ -f $ORIG_README_HTML ]]; then
+          if ! is_a_nonempty_file $ORIG_README_HTML; then
+            if ! is_an_existing_file $ORIG_README_HTML; then
               echo "::error file=$ORIG_README_HTML, title=FUBAR::file does not exist"
             else
               echo "::error file=$ORIG_README_HTML, title=FUBAR::zero length file"
@@ -390,27 +470,31 @@ jobs:
         run: |
           conffilename="headerDoc2HTML.config"
           conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
-          write_conffile_header() {
+          conffile_write_header() {
             local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${conffile}
           }
-          write_conffile_setting() {
+          conffile_write_conffile_setting() {
             local setting="$1"
             local value="$2"
             printf "%s => %s\n" "${setting}" "${value}" >> ${conffile}
           }
-          write_conffile_header "HeaderDoc configuration file"
-          write_conffile_setting "copyrightOwner" "lifepillar"
-          write_conffile_setting "apiUIDPrefix" "asunit"
-          write_conffile_setting "dateFormat" "%F"
+          conffile_write_header "HeaderDoc configuration file"
+          conffile_write_setting "copyrightOwner" "lifepillar"
+          conffile_write_setting "apiUIDPrefix" "asunit"
+          conffile_write_setting "dateFormat" "%F"
           ## :TODO: Needs more
 
       - name: Generate API documentation
         env:
           ASUNIT_TEXT: "ASUnit.applescript"
         run: |
+          is_a_directory() {
+            local dir="$1"
+            [[ -d "${dir}" ]]
+          }
           api_doc_dir="${{ steps.vars.outputs.abs_api_doc_dir }}"
-          if [[ ! -d "${api_doc_dir}" ]]; then
+          if ! is_a_directory "${api_doc_dir}"; then
             mkdir -p "${api_doc_dir}"
           fi
           pwd
@@ -418,11 +502,11 @@ jobs:
           echo "::group::Converting AppleScript file to API documentation"
           ## Log conversion issues, if necessary
           logfile="${{ steps.vars.outputs.logfile }}"
-          write_logfile_header() {
+          logfile_write_header() {
             local file_desc="$1"
             printf "###\n### %s\n###\n\n" "${file_desc}" >> ${logfile}
           }
-          write_logfile_cmd_header() {
+          logfile_write_cmd_header() {
             local cmd=${1}
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
@@ -430,17 +514,17 @@ jobs:
             printf '#%.0s' {1..78}   >> ${logfile}
             printf "\n"              >> ${logfile}
           }
-          write_logfile_header "CREATE_API_DOC_LOG"
-          write_logfile_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
+          logfile_write_header "CREATE_API_DOC_LOG"
+          logfile_write_cmd_header "headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT"
           if ! headerdoc2html -q -o ${api_doc_dir} $ASUNIT_TEXT 2>&1 | tee -a ${logfile}; then
             echo "::error file=$ASUNIT_TEXT, title=FUBAR::problem generating documentation from source comments"
           fi
           printf "\n\n\n\n"                                                        >> ${logfile}
           # :NOTE: Temporary to see what it looks like before assembly
-          #write_logfile_cmd_header "gatherheaderdoc ${api_doc_dir}"
-          #if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
-          #  echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
-          #fi
+          logfile_write_cmd_header "gatherheaderdoc ${api_doc_dir}"
+          if ! gatherheaderdoc ${api_doc_dir} 2>&1 | tee -a ${logfile}; then
+            echo "::error file=${api_doc_dir}, title=FUBAR::problem processing headerdoc output"
+          fi
           printf "\n\n"                                                            >> ${logfile}
           echo "::endgroup::"
 
