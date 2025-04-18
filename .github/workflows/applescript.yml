@@ -316,8 +316,8 @@ jobs:
             cat "${stdio}\n"                         >> "${stylesheet}"
           else
             echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
-           stylesheet_write_regeneration_required
-         fi
+            stylesheet_write_regeneration_required
+          fi
           echo "::endgroup::"
 
       - name: Symlink PNG Image
