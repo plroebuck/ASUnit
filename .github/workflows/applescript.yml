@@ -36,7 +36,6 @@ env:
   README_HTML: "README.html"
   README_MD: "README.md"
   STYLESHEET: "github-markdown.css"
-  UNIT_TEST: "Test\ ASUnit.applescript"
   VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
 
@@ -237,13 +236,15 @@ jobs:
           echo "::endgroup::"
 
       - name: Test ASUnit framework
+        env:
+          UNIT_TEST: "Test\ ASUnit.applescript"
         working-directory: test
         run: |
           echo "::group::Testing ASUnit framework with test program"
           echo "CWD: $( pwd )"
-          result=$( osascript "${{ env.UNIT_TEST }}" )
+          result=$( osascript "${UNIT_TEST}" )
           if [[ $? -ne 0 ]]; then
-            echo "::error file=${{ env.UNIT_TEST }}, title=FUBAR::${result}"
+            echo "::error file=${UNIT_TEST}, title=FUBAR::${result}"
           fi
           echo "::endgroup::"
 
@@ -265,18 +266,35 @@ jobs:
           fi
           echo "::endgroup::"
   
-      - name: Create HTML Stylesheet
+      - name: Download GitHub-like CSS Stylesheet
         env:
           STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
+        id:
+          css_vars
         run: |
+          echo "::group::Downloading source stylesheet"
+          css_markup="$( curl --silent $STYLESHEET_URL )"
+          rc=$?
+          if [[ ${rc} -eq 0 ]]; then
+            echo "github_css_url=$( echo $STYLESHEET_URL )" >> $GITHUB_OUTPUT
+            echo "markup=$( echo ${css_markup} )"           >> $GITHUB_OUTPUT
+          else
+            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
+            exit 1
+          fi
+          echo "::endgroup::"
+
+      - name: Create ASUnit CSS Stylesheet
+          echo "::group::Grab vars from previous step"
+          css_markup="${{ steps.css_vars.outputs.markup }}\n"
+          github_css_url="${{ steps.css_vars.outputs.github_css_url }}"
+          echo "::endgroup::"
+          echo "::group::Creating ASUnit CSS stylesheet"
+          github_css_url="${{ steps.css_vars.outputs.github_css_url }}"
           stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.STYLESHEET }}"
-          stylesheet_write_blank_line() {
-            printf '\n'                              >> ${stylesheet}
-          }
           stylesheet_write_header() {
             local filename="$1"
             local url="$2"
-            local file_desc="$1"
             printf '/***\n'                          >> ${stylesheet}
             printf ' ***\n'                          >> ${stylesheet}
             printf ' *** %s\n' "${filename}"         >> ${stylesheet}
@@ -284,49 +302,26 @@ jobs:
             printf ' *** DerivationOf: <%s>\n' "url" >> ${stylesheet}
             printf ' ***\n'                          >> ${stylesheet}
             printf ' ***/\n'                         >> ${stylesheet}
-            stylesheet_write_blank_line
-            stylesheet_write_blank_line
+            printf '\n\n'                            >> ${stylesheet}
           }
           stylesheet_write_center_heading_elem() {
             printf '#title-block-header {\n'         >> "${stylesheet}"
             printf '  text-align: center;\n'         >> "${stylesheet}"
             printf '}\n'                             >> "${stylesheet}"
-            stylesheet_write_blank_line
+            printf '\n'                              >> "${stylesheet}"
           }
-          stylesheet_write_regeneration_required() {
-            local notice='    <<< REGENERATE THIS FILE >>>'
-            local errmsg='Primary portion of stylesheet is missing'
-            local fixmsg='Download Gist (from URL above) again and append its contents manually'
-            stylesheet_write_blank_line
-            stylesheet_write_blank_line
-            printf '/**\n'                           >> "${stylesheet}"
-            printf ' ** %s\n' "${notice}"            >> "${stylesheet}"
-            printf ' ** ERROR: %s\n' "${errmsg}"     >> "${stylesheet}"
-            printf ' ** FIX:   %s\n' "${fixmsg}"     >> "${stylesheet}"
-            printf ' ** %s\n' "${notice}"            >> "${stylesheet}"
-            printf ' **/\n'                          >> "${stylesheet}"
-            stylesheet_write_blank_line
-            stylesheet_write_blank_line
-          }
-          stylesheet_write_header "${{ env.STYLESHEET }}" "${{ env.STYLESHEET_URL }}"
-          echo "::group::Downloading source stylesheet"
-          stdio="$( curl --silent $STYLESHEET_URL )"
-          rc=$?
-          if [[ ${rc} -eq 0 ]]; then
-            cat "${stdio}\n"                         >> "${stylesheet}"
-          else
-            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
-            stylesheet_write_regeneration_required
-          fi
+          stylesheet_write_header "${{ env.STYLESHEET }}" "${github_css_url}"
+          printf '%s\n' "${css_markup}"              >> "${stylesheet}"
+          stylesheet_write_center_heading_elem
           echo "::endgroup::"
 
-      - name: Symlink PNG Image
+      - name: Symlink PNG Image, If Needed
         run: |
           is_a_symlink_file() {
             local file="$1"
             [[ -h "${file}" ]]
           }
-          echo "::group::Symlink PNG image"
+          echo "::group::Symlink PNG image, if needed"
           ## :TODO: symlink name alias should already exist but doesn't
           cd "${{ env.ASSETS_DIR }}"
           png_logo="asunit_logo.png"
@@ -468,6 +463,7 @@ jobs:
 
       - name: Create HeaderDoc configuration file
         run: |
+          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.STYLESHEET }}"
           conffilename="headerDoc2HTML.config"
           conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
           conffile_write_header() {
@@ -483,6 +479,8 @@ jobs:
           conffile_write_setting "copyrightOwner" "lifepillar"
           conffile_write_setting "apiUIDPrefix" "asunit"
           conffile_write_setting "dateFormat" "%F"
+          conffile_write_setting "externalStyleSheets" "REPARENT/${stylesheet}"
+          conffile_write_setting "externalTOCStyleSheets" "REPARENT/${stylesheet}"
           ## :TODO: Needs more
 
       - name: Generate API documentation
@@ -527,6 +525,11 @@ jobs:
           fi
           printf "\n\n"                                                            >> ${logfile}
           echo "::endgroup::"
+
+      - name: Reparent stylesheet href relative paths
+        if: false
+        run: |
+          # Reparent all generated HTML with proper relative paths to stylesheet
 
       - name: Prettify Documentation
         if: false
