@@ -19,15 +19,15 @@ on:
 
 ## Global Environment
 env:
-  API_DOC_DIR: "./doc/api"
+  API_DOC_DIR: "doc/api"
   ARTIFACT_DIR: "${GITHUB_WORKSPACE}/doc/"
-  ASSETS_DIR: "./assets"
+  ASSETS_DIR: "assets"
   ASUNIT_BNDL: "ASUnit.scptd"
   ASUNIT_LIB_DIR: "${HOME}/Library/Script\ Libraries/com.lifepillar"
   ASUNIT_TEXT: "ASUnit.applescript"
-  DOC_DIR: "./doc"
-  DOC_IMAGES_DIR: "./doc/images"
-  DOC_STYLES_DIR: "./doc/styles"
+  DOC_DIR: "doc"
+  DOC_IMAGES_DIR: "doc/images"
+  DOC_STYLES_DIR: "doc/styles"
   GFM_STYLESHEET: "github-markdown.css"
   HEADERDOC_LOG: "HeaderDoc.log"
   LIB_PREFS_DIR: "${HOME}/Library/Preferences"
@@ -37,8 +37,8 @@ env:
   README_HTML: "README.html"
   README_MD: "README.md"
   README_STYLESHEET: "readme.css"
-  VAR_DIR: "./var"
-  VAR_LOG_DIR: "./var/log"
+  VAR_DIR: "var"
+  VAR_LOG_DIR: "var/log"
 
 ## Default Values
 defaults:
@@ -251,10 +251,12 @@ jobs:
 
       - name: Create ASUnit HTML Documentation Directories
         run: |
+          echo "::group::Migrate to 'lib\bash'"
           is_a_directory() {
             local dir="$1"
             [[ -d "${dir}" ]]
           }
+          echo "::endgroup::"
           echo "::group::Creating HTML directory structures"
           if ! is_a_directory "${{ env.DOC_DIR }}"; then
             mkdir -p "${{ env.DOC_DIR }}"
