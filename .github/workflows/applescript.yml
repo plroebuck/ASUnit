@@ -35,7 +35,8 @@ env:
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
   README_MD: "README.md"
-  STYLESHEET: "github-markdown.css"
+  GFM_STYLESHEET: "github-markdown.css"
+  README_STYLESHEET: "readme.css"
   VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
 
@@ -266,41 +267,40 @@ jobs:
           fi
           echo "::endgroup::"
   
-      - name: Download GitHub-like CSS Stylesheet
+      - name: Create GFM-like Markdown Stylesheet
         env:
-          STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
-        id:
-          css_vars
+          GFM_STYLESHEET_URL: https://gist.githubusercontent.com/fergiemcdowall/9ecbea41f67465b5cfcd3560508eb100/raw/4e79df633dbf163c3543be460f30460ebd5c5b88/github-markdown.css
         run: |
           echo "::group::Downloading source stylesheet"
-          css_markup="$( curl --silent $STYLESHEET_URL )"
+          declare -ir CURLE_OK=0
+          css_markup="$( curl --silent $GFM_STYLESHEET_URL )"
           rc=$?
-          if [[ ${rc} -eq 0 ]]; then
-            echo "github_css_url=$( echo $STYLESHEET_URL )" >> $GITHUB_OUTPUT
-            echo "markup=$( echo ${css_markup} )"           >> $GITHUB_OUTPUT
-          else
-            echo "::error file=${{ env.STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
+          if [[ ${rc} -ne ${CURLE_OK} ]]; then
+            echo "::error file=${{ env.GFM_STYLESHEET }}, title=FUBAR::failed to download - curl (${rc})"
             exit 1
           fi
           echo "::endgroup::"
-
-      - name: Create ASUnit CSS Stylesheet
-          echo "::group::Grab vars from previous step"
-          css_markup="${{ steps.css_vars.outputs.markup }}\n"
-          github_css_url="${{ steps.css_vars.outputs.github_css_url }}"
-          echo "::endgroup::"
-          echo "::group::Creating ASUnit CSS stylesheet"
-          github_css_url="${{ steps.css_vars.outputs.github_css_url }}"
-          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.STYLESHEET }}"
+          echo "::group::Creating GFM-like Markdown stylesheet"
+          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.GFM_STYLESHEET }}"
           stylesheet_write_header() {
             local filename="$1"
             local url="$2"
             printf '/***\n'                          >> ${stylesheet}
-            printf ' ***\n'                          >> ${stylesheet}
             printf ' *** %s\n' "${filename}"         >> ${stylesheet}
-            printf ' ***\n'                          >> ${stylesheet}
-            printf ' *** DerivationOf: <%s>\n' "url" >> ${stylesheet}
-            printf ' ***\n'                          >> ${stylesheet}
+            printf ' ***/\n'                         >> ${stylesheet}
+            printf '\n\n'                            >> ${stylesheet}
+          }
+          stylesheet_write_header "${{ env.GFM_STYLESHEET }}"
+          printf '%s\n' "${css_markup}"              >> "${stylesheet}"
+          echo "::endgroup::"
+
+      - name: Create ASUnit README Stylesheet
+          echo "::group::Creating ASUnit README stylesheet"
+          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.README_STYLESHEET }}"
+          stylesheet_write_header() {
+            local filename="$1"
+            printf '/***\n'                          >> ${stylesheet}
+            printf ' *** %s\n' "${filename}"         >> ${stylesheet}
             printf ' ***/\n'                         >> ${stylesheet}
             printf '\n\n'                            >> ${stylesheet}
           }
@@ -310,8 +310,7 @@ jobs:
             printf '}\n'                             >> "${stylesheet}"
             printf '\n'                              >> "${stylesheet}"
           }
-          stylesheet_write_header "${{ env.STYLESHEET }}" "${github_css_url}"
-          printf '%s\n' "${css_markup}"              >> "${stylesheet}"
+          stylesheet_write_header "${{ env.README_STYLESHEET }}"
           stylesheet_write_center_heading_elem
           echo "::endgroup::"
 
@@ -343,11 +342,6 @@ jobs:
           ln -s "${png_logo_rel}" ${svg_logo}
           echo "::endgroup::"
 
-      - name: Install Pandoc
-        uses: pandoc/actions/setup@v1
-        with:
-          version: 2.19
-
       - name: Save values for use in later steps
         id: vars
         run: |
@@ -362,8 +356,8 @@ jobs:
           logfile="${abs_var_log_dir}/${{ env.HEADERDOC_LOG }}"
           readme_when_off="$( git log -1 --pretty="format:%ci" README.md | sed -e 's/ /T/' -e 's/ //' )"
           orig_when_off="$( git log -1 --pretty="format:%ci" OldManual.md | sed -e 's/ /T/' -e 's/ //' )"
-          readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%TZ" )"
-          orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%TZ" )"
+          readme_when="$( date -j -f "%FT%T%z" $readme_when_off +"%FT%RZ" )"
+          orig_when="$( date -j -f "%FT%T%z" $orig_when_off +"%FT%RZ" )"
           echo "::endgroup::"
           #---
           echo "::group::Saving values to GITHUB_OUTPUT"
@@ -377,10 +371,16 @@ jobs:
           echo "orig_when=$( echo $orig_when )" >> $GITHUB_OUTPUT
           echo "::endgroup::"
        
+      - name: Install Pandoc
+        uses: pandoc/actions/setup@v1
+        with:
+          version: 2.19
+
       - name: Convert README.md using Pandoc
         env:
           README_HTML: ${{ steps.vars.outputs.abs_readme_html }}
-          REL_STYLESHEET: styles/${{ env.STYLESHEET }}
+          REL_GFM_STYLESHEET: styles/${{ env.GFM_STYLESHEET }}
+          REL_README_STYLESHEET: styles/${{ env.README_STYLESHEET }}
         run: >-
           pandoc
           --from gfm
@@ -388,26 +388,33 @@ jobs:
           --standalone
           --columns=80
           --variable lang="en-US"
-          --metadata title="ASUnit, the AppleScript testing framework"
-          --metadata description="User Guide"
+          --metadata title="User Guide"
+          --metadata description="AppleScript Testing Framework"
           --metadata date="${{ steps.vars.outputs.readme_when }}"
           --request-header="X-Content-Type-Options: nosniff"
-          --highlight-style=tango
-          --css="$REL_STYLESHEET"
+          --highlight-style="tango"
+          --css="$REL_GFM_STYLESHEET"
+          --css="$REL_README_STYLESHEET"
           --output=$README_HTML
           ${{ env.README_MD }}
 
       - name: Convert OldManual.md using Pandoc
         env:
           ORIG_README_HTML: ${{ steps.vars.outputs.abs_old_readme_html }}
+          REL_GFM_STYLESHEET: styles/${{ env.GFM_STYLESHEET }}
         run: >-
           pandoc
           --from gfm
-          --to html
+          --to html5
           --standalone 
           --columns=80
-          --metadata title="ASUnit's original user guide"
+          --variable lang="en-US"
+          --metadata title="Original User Guide"
+          --metadata description="AppleScript Testing Framework"
           --metadata date="${{ steps.vars.outputs.orig_when }}"
+          --request-header="X-Content-Type-Options: nosniff"
+          --highlight-style="tango"
+          --css="$REL_GFM_STYLESHEET"
           --output=$ORIG_README_HTML
           ${{ env.OLD_README_MD }}
   
@@ -463,8 +470,9 @@ jobs:
 
       - name: Create HeaderDoc configuration file
         run: |
-          stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.STYLESHEET }}"
-          conffilename="headerDoc2HTML.config"
+          gfm_stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.GFM_STYLESHEET }}"
+          readme_stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.README_STYLESHEET }}"
+           conffilename="headerDoc2HTML.config"
           conffile="${{ env.LIB_PREFS_DIR }}/com.apple.${conffilename}"
           conffile_write_header() {
             local file_desc="$1"
@@ -479,8 +487,8 @@ jobs:
           conffile_write_setting "copyrightOwner" "lifepillar"
           conffile_write_setting "apiUIDPrefix" "asunit"
           conffile_write_setting "dateFormat" "%F"
-          conffile_write_setting "externalStyleSheets" "REPARENT/${stylesheet}"
-          conffile_write_setting "externalTOCStyleSheets" "REPARENT/${stylesheet}"
+          conffile_write_setting "externalStyleSheets" "REPARENT/${gfm_stylesheet}" "REPARENT/${readme_stylesheet}"
+          conffile_write_setting "externalTOCStyleSheets" "REPARENT/${gfm_stylesheet}"
           ## :TODO: Needs more
 
       - name: Generate API documentation
