@@ -28,6 +28,7 @@ env:
   DOC_DIR: "./doc"
   DOC_IMAGES_DIR: "./doc/images"
   DOC_STYLES_DIR: "./doc/styles"
+  GFM_STYLESHEET: "github-markdown.css"
   HEADERDOC_LOG: "HeaderDoc.log"
   LIB_PREFS_DIR: "${HOME}/Library/Preferences"
   LIB_SCRIPT_LIBS_DIR: "${HOME}/Library/Script\ Libraries"
@@ -35,7 +36,6 @@ env:
   OLD_README_MD: "OldManual.md"
   README_HTML: "README.html"
   README_MD: "README.md"
-  GFM_STYLESHEET: "github-markdown.css"
   README_STYLESHEET: "readme.css"
   VAR_DIR: "./var"
   VAR_LOG_DIR: "./var/log"
@@ -284,31 +284,28 @@ jobs:
           stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.GFM_STYLESHEET }}"
           stylesheet_write_header() {
             local filename="$1"
-            local url="$2"
             printf '/***\n'                          >> ${stylesheet}
             printf ' *** %s\n' "${filename}"         >> ${stylesheet}
-            printf ' ***/\n'                         >> ${stylesheet}
-            printf '\n\n'                            >> ${stylesheet}
+            printf ' ***/\n\n'                       >> ${stylesheet}
           }
           stylesheet_write_header "${{ env.GFM_STYLESHEET }}"
           printf '%s\n' "${css_markup}"              >> "${stylesheet}"
           echo "::endgroup::"
 
       - name: Create ASUnit README Stylesheet
+        run: |
           echo "::group::Creating ASUnit README stylesheet"
           stylesheet="${{ env.DOC_STYLES_DIR }}/${{ env.README_STYLESHEET }}"
           stylesheet_write_header() {
             local filename="$1"
             printf '/***\n'                          >> ${stylesheet}
             printf ' *** %s\n' "${filename}"         >> ${stylesheet}
-            printf ' ***/\n'                         >> ${stylesheet}
-            printf '\n\n'                            >> ${stylesheet}
+            printf ' ***/\n\n'                       >> ${stylesheet}
           }
           stylesheet_write_center_heading_elem() {
             printf '#title-block-header {\n'         >> "${stylesheet}"
             printf '  text-align: center;\n'         >> "${stylesheet}"
-            printf '}\n'                             >> "${stylesheet}"
-            printf '\n'                              >> "${stylesheet}"
+            printf '}\n\n'                           >> "${stylesheet}"
           }
           stylesheet_write_header "${{ env.README_STYLESHEET }}"
           stylesheet_write_center_heading_elem
